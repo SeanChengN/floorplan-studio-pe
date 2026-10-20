@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { Action, ActionKind } from '../model/schema';
 import { Field, Select, TextInput } from '../ui/inputs';
 
@@ -26,14 +27,14 @@ export function ActionEditor({
       </Field>
       {action.kind === 'call-service' && (
         <>
-          <Field label="Service (domain.service)">
+          <Field label={t("Service (domain.service)")}>
             <TextInput
               value={action.service ?? ''}
               placeholder="light.turn_on"
               onChange={(v) => onChange({ ...action, service: v })}
             />
           </Field>
-          <Field label="Service data (YAML)">
+          <Field label={t("Service data (YAML)")}>
             <textarea
               rows={3}
               value={action.serviceData ?? ''}
@@ -44,7 +45,7 @@ export function ActionEditor({
         </>
       )}
       {action.kind === 'navigate' && (
-        <Field label="Path">
+        <Field label={t("Path")}>
           <TextInput
             value={action.navPath ?? ''}
             placeholder="/lovelace/kitchen"
@@ -53,7 +54,7 @@ export function ActionEditor({
         </Field>
       )}
       {action.kind === 'url' && (
-        <Field label="URL">
+        <Field label={t("URL")}>
           <TextInput
             value={action.url ?? ''}
             placeholder="https://…"

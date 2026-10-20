@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import { useEffect, useState } from 'react';
 import { activeFloor, useStore } from './state/store';
 import { loadImageFile } from './ui/imageLoad';
@@ -108,7 +109,7 @@ export default function App() {
         )}
         <main className="fp-center">
           <CanvasSvg />
-          {mode === 'preview' && <div className="fp-preview-badge">PREVIEW — live states</div>}
+          {mode === 'preview' && <div className="fp-preview-badge">{t("PREVIEW — live states")}</div>}
         </main>
         {mode === 'edit' && (
           <aside className="fp-right">

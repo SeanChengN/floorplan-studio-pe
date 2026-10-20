@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useRef } from 'react';
 import { activeFloor, useStore } from '../state/store';
 import { Floor, Marker, MarkerStyleType, Room, Wall } from '../model/schema';
@@ -38,8 +39,8 @@ export function Inspector() {
 function MultiInfo({ count }: { count: number }) {
   return (
     <>
-      <div className="fp-panel-title">{count} items selected</div>
-      <div className="fp-hint">Drag to move together, arrow keys to nudge, Ctrl+D to duplicate, Del to delete.</div>
+      <div className="fp-panel-title">{count} {t("items selected")}</div>
+      <div className="fp-hint">{t("Drag to move together, arrow keys to nudge, Ctrl+D to duplicate, Del to delete.")}</div>
     </>
   );
 }
@@ -78,7 +79,7 @@ function BackgroundEditor({ floor }: { floor: Floor }) {
 
   return (
     <>
-      <div className="fp-panel-title">Background & canvas</div>
+      <div className="fp-panel-title">{t("Background & canvas")}</div>
       <input
         ref={fileRef}
         type="file"
@@ -87,38 +88,37 @@ function BackgroundEditor({ floor }: { floor: Floor }) {
         onChange={(e) => onFile(e.target.files?.[0])}
       />
       <button className="fp-add" onClick={() => fileRef.current?.click()}>
-        {b.dataUri ? 'Replace image…' : 'Upload image…'}
+        {b.dataUri ? t("Replace image…") : t("Upload image…")}
       </button>
-      <div className="fp-hint">…or paste (Ctrl+V) / drag-drop an image onto the canvas.</div>
+      <div className="fp-hint">{t("…or paste (Ctrl+V) / drag-drop an image onto the canvas.")}</div>
 
       {b.dataUri && (
         <>
-          <Field label="Opacity">
+          <Field label={t("Opacity")}>
             <Slider value={b.opacity} onChange={(v) => setBg({ opacity: v })} />
           </Field>
-          <Field label="Scale">
+          <Field label={t("Scale")}>
             <Slider value={b.scale} min={0.1} max={4} step={0.05} onChange={(v) => setBg({ scale: v })} />
           </Field>
           <div className="fp-row2">
             <Field label="X"><NumberInput value={b.x} onChange={(v) => setBg({ x: v })} /></Field>
             <Field label="Y"><NumberInput value={b.y} onChange={(v) => setBg({ y: v })} /></Field>
           </div>
-          <Field label="Rotation°">
+          <Field label={t("Rotation°")}>
             <NumberInput value={b.rotation} onChange={(v) => setBg({ rotation: v })} />
           </Field>
           <label className="fp-check">
             <input type="checkbox" checked={b.locked} onChange={(e) => setBg({ locked: e.target.checked })} />
-            Lock background layer
-          </label>
+            {t("Lock background layer")}</label>
         </>
       )}
 
       <div className="fp-divider" />
       <div className="fp-row2">
-        <Field label="Canvas W">
+        <Field label={t("Canvas W")}>
           <NumberInput value={floor.canvas.width} onChange={(v) => commit((p) => void (p.floors.find((f) => f.id === floor.id)!.canvas.width = v))} />
         </Field>
-        <Field label="Canvas H">
+        <Field label={t("Canvas H")}>
           <NumberInput value={floor.canvas.height} onChange={(v) => commit((p) => void (p.floors.find((f) => f.id === floor.id)!.canvas.height = v))} />
         </Field>
       </div>
@@ -133,17 +133,15 @@ function GridControls() {
   return (
     <>
       <div className="fp-divider" />
-      <Field label="Grid size (px)">
+      <Field label={t("Grid size (px)")}>
         <NumberInput value={settings.grid} onChange={(v) => commit((p) => void (p.settings.grid = v))} />
       </Field>
       <label className="fp-check">
         <input type="checkbox" checked={settings.snapGrid} onChange={(e) => commit((p) => void (p.settings.snapGrid = e.target.checked))} />
-        Snap to grid
-      </label>
+        {t("Snap to grid")}</label>
       <label className="fp-check">
         <input type="checkbox" checked={settings.snapAngle} onChange={(e) => commit((p) => void (p.settings.snapAngle = e.target.checked))} />
-        Snap wall angles (15°)
-      </label>
+        {t("Snap wall angles (15°)")}</label>
     </>
   );
 }
@@ -163,9 +161,9 @@ function MarkerEditor({ marker, floor }: { marker: Marker; floor: Floor }) {
 
   return (
     <>
-      <div className="fp-panel-title">Marker</div>
+      <div className="fp-panel-title">{t("Marker")}</div>
 
-      <div className="fp-subtitle">Entities</div>
+      <div className="fp-subtitle">{t("Entities")}</div>
       {marker.entities.map((e, i) => (
         <div key={i} className="fp-entity-chip">
           <input
@@ -175,20 +173,20 @@ function MarkerEditor({ marker, floor }: { marker: Marker; floor: Floor }) {
           <button className="fp-icon-btn" onClick={() => set((m) => m.entities.splice(i, 1))}>✕</button>
         </div>
       ))}
-      <button className="fp-add" onClick={() => set((m) => m.entities.push(''))}>+ Add entity</button>
+      <button className="fp-add" onClick={() => set((m) => m.entities.push(''))}>{t("+ Add entity")}</button>
       {marker.entities.length > 1 && (
-        <Field label="Group element id (for ha-floorplan)">
+        <Field label={t("Group element id (for ha-floorplan)")}>
           <TextInput
             value={marker.elementId ?? ''}
-            placeholder="e.g. living_lights"
+            placeholder={t("e.g. living_lights")}
             onChange={(v) => set((m) => void (m.elementId = v || undefined))}
           />
         </Field>
       )}
 
       <div className="fp-divider" />
-      <div className="fp-subtitle">Style</div>
-      <Field label="Type">
+      <div className="fp-subtitle">{t("Style")}</div>
+      <Field label={t("Type")}>
         <Select<MarkerStyleType>
           value={marker.style.type}
           onChange={(v) => set((m) => void (m.style.type = v))}
@@ -202,7 +200,7 @@ function MarkerEditor({ marker, floor }: { marker: Marker; floor: Floor }) {
         />
       </Field>
       {marker.style.type === 'icon' && (
-        <Field label="Icon (any Home Assistant / MDI name)">
+        <Field label={t("Icon (any Home Assistant / MDI name)")}>
           <IconPicker value={marker.style.icon} onChange={(v) => set((m) => void (m.style.icon = v))} />
           {marker.entities[0] && (
             <button
@@ -219,27 +217,26 @@ function MarkerEditor({ marker, floor }: { marker: Marker; floor: Floor }) {
                 )
               }
             >
-              ↺ Use Home Assistant's icon
-            </button>
+              {t("↺ Use Home Assistant's icon")}</button>
           )}
         </Field>
       )}
       <div className="fp-row2">
-        <Field label="Color"><ColorInput value={marker.style.color} onChange={(v) => set((m) => void (m.style.color = v))} /></Field>
-        <Field label="Size"><NumberInput value={marker.style.size} min={8} onChange={(v) => set((m) => void (m.style.size = v))} /></Field>
+        <Field label={t("Color")}><ColorInput value={marker.style.color} onChange={(v) => set((m) => void (m.style.color = v))} /></Field>
+        <Field label={t("Size")}><NumberInput value={marker.style.size} min={8} onChange={(v) => set((m) => void (m.style.size = v))} /></Field>
       </div>
-      <Field label="Static label">
+      <Field label={t("Static label")}>
         <TextInput value={marker.style.label ?? ''} onChange={(v) => set((m) => void (m.style.label = v))} />
       </Field>
       <div className="fp-row2">
-        <Field label="Font size (px)">
+        <Field label={t("Font size (px)")}>
           <NumberInput
             value={marker.style.fontSize ?? 13}
             min={6}
             onChange={(v) => set((m) => void (m.style.fontSize = v))}
           />
         </Field>
-        <Field label="Text color">
+        <Field label={t("Text color")}>
           <ColorInput
             value={marker.style.fontColor ?? '#ffffff'}
             onChange={(v) => set((m) => void (m.style.fontColor = v))}
@@ -247,14 +244,14 @@ function MarkerEditor({ marker, floor }: { marker: Marker; floor: Floor }) {
         </Field>
       </div>
       <div className="fp-row2">
-        <Field label="Font family">
+        <Field label={t("Font family")}>
           <TextInput
             value={marker.style.fontFamily ?? ''}
             placeholder="sans-serif"
             onChange={(v) => set((m) => void (m.style.fontFamily = v || undefined))}
           />
         </Field>
-        <Field label="Weight (100–900)">
+        <Field label={t("Weight (100–900)")}>
           <NumberInput
             value={marker.style.fontWeight ?? 600}
             min={100}
@@ -266,27 +263,25 @@ function MarkerEditor({ marker, floor }: { marker: Marker; floor: Floor }) {
       </div>
       <label className="fp-check">
         <input type="checkbox" checked={!!marker.style.showState} onChange={(e) => set((m) => void (m.style.showState = e.target.checked))} />
-        Show live state value + unit
-      </label>
+        {t("Show live state value + unit")}</label>
       <label className="fp-check">
         <input type="checkbox" checked={!!marker.style.pulse} onChange={(e) => set((m) => void (m.style.pulse = e.target.checked))} />
-        Pulse while on (animation)
-      </label>
+        {t("Pulse while on (animation)")}</label>
       {marker.style.type === 'svg' && (
-        <Field label="Inner SVG markup">
+        <Field label={t("Inner SVG markup")}>
           <textarea rows={3} value={marker.style.svg ?? ''} onChange={(e) => set((m) => void (m.style.svg = e.target.value))} />
         </Field>
       )}
 
       <div className="fp-divider" />
-      <div className="fp-subtitle">Position</div>
+      <div className="fp-subtitle">{t("Position")}</div>
       <div className="fp-row2">
         <Field label="X"><NumberInput value={marker.x} onChange={(v) => set((m) => void (m.x = v))} /></Field>
         <Field label="Y"><NumberInput value={marker.y} onChange={(v) => set((m) => void (m.y = v))} /></Field>
       </div>
 
       <div className="fp-divider" />
-      <div className="fp-subtitle">State-based styling</div>
+      <div className="fp-subtitle">{t("State-based styling")}</div>
       <StateRuleEditor
         rules={marker.stateRules}
         fallbackEntity={marker.entities[0]}
@@ -296,25 +291,25 @@ function MarkerEditor({ marker, floor }: { marker: Marker; floor: Floor }) {
       />
 
       <div className="fp-divider" />
-      <div className="fp-subtitle">Conditional visibility</div>
-      <Field label="Show only when entity…">
+      <div className="fp-subtitle">{t("Conditional visibility")}</div>
+      <Field label={t("Show only when entity…")}>
         <TextInput
           value={marker.visibility?.entityId ?? ''}
-          placeholder="entity_id (blank = always)"
+          placeholder={t("entity_id (blank = always)")}
           onChange={(v) => set((m) => void (m.visibility = v ? { entityId: v, state: m.visibility?.state } : null))}
         />
       </Field>
       {marker.visibility?.entityId && (
-        <Field label="…equals state (blank = is on)">
+        <Field label={t("…equals state (blank = is on)")}>
           <TextInput value={marker.visibility.state ?? ''} onChange={(v) => set((m) => void (m.visibility = { entityId: marker.visibility!.entityId, state: v }))} />
         </Field>
       )}
 
       <div className="fp-divider" />
-      <div className="fp-subtitle">Actions</div>
-      <ActionEditor label="Tap" action={marker.actions.tap} onChange={(a) => set((m) => void (m.actions.tap = a))} />
-      <ActionEditor label="Hold" action={marker.actions.hold} onChange={(a) => set((m) => void (m.actions.hold = a))} />
-      <ActionEditor label="Double tap" action={marker.actions.double} onChange={(a) => set((m) => void (m.actions.double = a))} />
+      <div className="fp-subtitle">{t("Actions")}</div>
+      <ActionEditor label={t("Tap")} action={marker.actions.tap} onChange={(a) => set((m) => void (m.actions.tap = a))} />
+      <ActionEditor label={t("Hold")} action={marker.actions.hold} onChange={(a) => set((m) => void (m.actions.hold = a))} />
+      <ActionEditor label={t("Double tap")} action={marker.actions.double} onChange={(a) => set((m) => void (m.actions.double = a))} />
     </>
   );
 }
@@ -332,9 +327,9 @@ function RoomEditor({ room, floor }: { room: Room; floor: Floor }) {
   }
   return (
     <>
-      <div className="fp-panel-title">Room</div>
-      <Field label="Name"><TextInput value={room.name} onChange={(v) => set((r) => void (r.name = v))} /></Field>
-      <Field label="HA area (optional)">
+      <div className="fp-panel-title">{t("Room")}</div>
+      <Field label={t("Name")}><TextInput value={room.name} onChange={(v) => set((r) => void (r.name = v))} /></Field>
+      <Field label={t("HA area (optional)")}>
         <Select
           value={room.areaId ?? ''}
           onChange={(v) => set((r) => void (r.areaId = v || undefined))}
@@ -342,15 +337,15 @@ function RoomEditor({ room, floor }: { room: Room; floor: Floor }) {
         />
       </Field>
       <div className="fp-row2">
-        <Field label="Fill"><ColorInput value={room.fill} onChange={(v) => set((r) => void (r.fill = v))} /></Field>
-        <Field label="Opacity"><Slider value={room.opacity} onChange={(v) => set((r) => void (r.opacity = v))} /></Field>
+        <Field label={t("Fill")}><ColorInput value={room.fill} onChange={(v) => set((r) => void (r.fill = v))} /></Field>
+        <Field label={t("Opacity")}><Slider value={room.opacity} onChange={(v) => set((r) => void (r.opacity = v))} /></Field>
       </div>
       <div className="fp-divider" />
-      <div className="fp-subtitle">State-based coloring</div>
+      <div className="fp-subtitle">{t("State-based coloring")}</div>
       <StateRuleEditor rules={room.stateRules} onChange={(next) => set((r) => void (r.stateRules = next))} />
       <div className="fp-divider" />
-      <div className="fp-subtitle">Click action</div>
-      <ActionEditor label="Tap" action={room.actions?.tap ?? defaultActions().tap} onChange={(a) => set((r) => void (r.actions = { ...(r.actions ?? defaultActions()), tap: a }))} />
+      <div className="fp-subtitle">{t("Click action")}</div>
+      <ActionEditor label={t("Tap")} action={room.actions?.tap ?? defaultActions().tap} onChange={(a) => set((r) => void (r.actions = { ...(r.actions ?? defaultActions()), tap: a }))} />
     </>
   );
 }
@@ -366,12 +361,12 @@ function WallEditor({ wall, floor }: { wall: Wall; floor: Floor }) {
   }
   return (
     <>
-      <div className="fp-panel-title">Wall</div>
+      <div className="fp-panel-title">{t("Wall")}</div>
       <div className="fp-row2">
-        <Field label="Thickness"><NumberInput value={wall.thickness} min={1} onChange={(v) => set((w) => void (w.thickness = v))} /></Field>
-        <Field label="Color"><ColorInput value={wall.color} onChange={(v) => set((w) => void (w.color = v))} /></Field>
+        <Field label={t("Thickness")}><NumberInput value={wall.thickness} min={1} onChange={(v) => set((w) => void (w.thickness = v))} /></Field>
+        <Field label={t("Color")}><ColorInput value={wall.color} onChange={(v) => set((w) => void (w.color = v))} /></Field>
       </div>
-      <div className="fp-hint">{wall.points.length} points. Doors/windows can snap onto this wall.</div>
+      <div className="fp-hint">{wall.points.length} {t("points. Doors/windows can snap onto this wall.")}</div>
     </>
   );
 }

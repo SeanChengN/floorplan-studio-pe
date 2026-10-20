@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { nanoid } from 'nanoid';
 import { StateMode, StateRule } from '../model/schema';
 import { ColorInput, Field, NumberInput, Select, TextInput } from '../ui/inputs';
@@ -51,7 +52,7 @@ export function StateRuleEditor({
               ✕
             </button>
           </div>
-          <Field label="Entity (blank = default)">
+          <Field label={t("Entity (blank = default)")}>
             <TextInput
               value={r.entityId ?? ''}
               placeholder={fallbackEntity ?? 'entity_id'}
@@ -61,10 +62,10 @@ export function StateRuleEditor({
 
           {r.mode === 'boolean' && (
             <div className="fp-row2">
-              <Field label="On color">
+              <Field label={t("On color")}>
                 <ColorInput value={r.onColor ?? '#ffc107'} onChange={(v) => update(r.id, { onColor: v })} />
               </Field>
-              <Field label="Off color">
+              <Field label={t("Off color")}>
                 <ColorInput value={r.offColor ?? '#6b7280'} onChange={(v) => update(r.id, { offColor: v })} />
               </Field>
             </div>
@@ -72,7 +73,7 @@ export function StateRuleEditor({
 
           {r.mode === 'threshold' && (
             <div className="fp-row3">
-              <Field label="Compare">
+              <Field label={t("Compare")}>
                 <Select
                   value={r.compare ?? '>='}
                   onChange={(v) => update(r.id, { compare: v as StateRule['compare'] })}
@@ -85,10 +86,10 @@ export function StateRuleEditor({
                   ]}
                 />
               </Field>
-              <Field label="Value">
+              <Field label={t("Value")}>
                 <NumberInput value={r.value ?? 0} onChange={(v) => update(r.id, { value: v })} />
               </Field>
-              <Field label="Color">
+              <Field label={t("Color")}>
                 <ColorInput value={r.color ?? '#ef4444'} onChange={(v) => update(r.id, { color: v })} />
               </Field>
             </div>
@@ -96,16 +97,16 @@ export function StateRuleEditor({
 
           {r.mode === 'gradient' && (
             <div className="fp-row2">
-              <Field label="Min">
+              <Field label={t("Min")}>
                 <NumberInput value={r.min ?? 0} onChange={(v) => update(r.id, { min: v })} />
               </Field>
-              <Field label="Max">
+              <Field label={t("Max")}>
                 <NumberInput value={r.max ?? 100} onChange={(v) => update(r.id, { max: v })} />
               </Field>
-              <Field label="Min color">
+              <Field label={t("Min color")}>
                 <ColorInput value={r.minColor ?? '#2563eb'} onChange={(v) => update(r.id, { minColor: v })} />
               </Field>
-              <Field label="Max color">
+              <Field label={t("Max color")}>
                 <ColorInput value={r.maxColor ?? '#dc2626'} onChange={(v) => update(r.id, { maxColor: v })} />
               </Field>
             </div>
@@ -113,22 +114,22 @@ export function StateRuleEditor({
 
           {r.mode === 'stringMatch' && (
             <div className="fp-row2">
-              <Field label="State =">
+              <Field label={t("State =")}>
                 <TextInput value={r.match ?? ''} onChange={(v) => update(r.id, { match: v })} />
               </Field>
-              <Field label="Color">
+              <Field label={t("Color")}>
                 <ColorInput value={r.color ?? '#22c55e'} onChange={(v) => update(r.id, { color: v })} />
               </Field>
             </div>
           )}
 
           {showIcon && (
-            <Field label="Icon on match (mdi name)">
+            <Field label={t("Icon on match (mdi name)")}>
               <TextInput value={r.icon ?? ''} onChange={(v) => update(r.id, { icon: v || undefined })} />
             </Field>
           )}
           {showAnimation && (
-            <Field label="Animation on match">
+            <Field label={t("Animation on match")}>
               <Select
                 value={r.animation ?? 'none'}
                 onChange={(v) => update(r.id, { animation: v as StateRule['animation'] })}
@@ -143,8 +144,7 @@ export function StateRuleEditor({
         </div>
       ))}
       <button className="fp-add" onClick={add}>
-        + Add state rule
-      </button>
+        {t("+ Add state rule")}</button>
     </div>
   );
 }

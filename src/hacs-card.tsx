@@ -2,15 +2,16 @@
 // element. The app is mounted inside a shadow root with its stylesheet injected
 // inline, so HA's CSS and the app's CSS can't collide in either direction.
 //
-// Built by vite.hacs.config.ts into a single dist-hacs/floorplan-studio.js that
+// Built by vite.hacs.config.ts into a single dist-hacs/floorplan-studio-pe.js that
 // HACS serves as a Lovelace resource.
 import { StrictMode } from 'react';
 import { createRoot, Root } from 'react-dom/client';
-import App from './App';
+import Studio from './Studio';
 import { setHass, HassLike } from './ha/hassBridge';
 // `?inline` gives the CSS as a string instead of injecting it into document
 // <head> — we put it in the shadow root instead.
 import cssText from './styles.css?inline';
+import editorCss from './picture/editor.css?inline';
 
 const HOST_CSS =
   ':host{display:block;height:var(--floorplan-studio-height,85vh);}' +
@@ -37,9 +38,10 @@ class FloorplanStudioCard extends HTMLElement {
   connectedCallback(): void {
     if (this.mounted) return;
     this.mounted = true;
-    const shadow = this.attachShadow({ mode: 'open' });
+    const shadow = this.shadowRoot || this.attachShadow({ mode: 'open' });
+    shadow.replaceChildren();
     const style = document.createElement('style');
-    style.textContent = HOST_CSS + cssText;
+    style.textContent = HOST_CSS + cssText + editorCss;
     shadow.appendChild(style);
     const mount = document.createElement('div');
     mount.className = 'fps-root';
@@ -47,7 +49,7 @@ class FloorplanStudioCard extends HTMLElement {
     this.root = createRoot(mount);
     this.root.render(
       <StrictMode>
-        <App />
+        <Studio />
       </StrictMode>,
     );
   }
@@ -65,8 +67,8 @@ class FloorplanStudioCard extends HTMLElement {
   }
 }
 
-if (!customElements.get('floorplan-studio-card')) {
-  customElements.define('floorplan-studio-card', FloorplanStudioCard);
+if (!customElements.get('floorplan-studio-pe-card')) {
+  customElements.define('floorplan-studio-pe-card', FloorplanStudioCard);
 }
 
 // Surface it in HA's "Add card" picker.
@@ -78,7 +80,7 @@ interface CustomCard {
 const w = window as unknown as { customCards?: CustomCard[] };
 w.customCards = w.customCards || [];
 w.customCards.push({
-  type: 'floorplan-studio-card',
-  name: 'Floorplan Studio',
-  description: 'Full floorplan editor inside a dashboard card.',
+  type: 'floorplan-studio-pe-card',
+  name: 'Floorplan Studio PE',
+  description: 'Native picture-elements visual editor / 原生户型卡片编辑器。',
 });

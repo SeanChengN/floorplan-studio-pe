@@ -3,3 +3,7 @@ dist
 dist-hacs
 *.local
 .DS_Store
+.recycle-bin/
+.npm-cache/
+.validation/
+.playwright/

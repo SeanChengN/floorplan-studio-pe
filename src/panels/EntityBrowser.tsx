@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useMemo, useState } from 'react';
 import { activeFloor, useStore } from '../state/store';
 import { createMarker } from '../model/defaults';
@@ -80,22 +81,21 @@ export function EntityBrowser() {
     <div className="fp-panel fp-entities">
       <div className="fp-panel-title fp-title-row">
         <span>
-          Entities <span className="fp-badge">{usingDemo ? 'demo' : 'live'}</span>
+          {t("Entities")}<span className="fp-badge">{t(usingDemo ? 'Demo' : 'Live')}</span>
         </span>
-        <button className="fp-mini" title="Set every icon-marker's icon to the one Home Assistant uses" onClick={syncAllIcons}>
-          ↺ Sync icons
-        </button>
+        <button className="fp-mini" title={t("Set every icon-marker's icon to the one Home Assistant uses")} onClick={syncAllIcons}>
+          {t("↺ Sync icons")}</button>
       </div>
       <div className="fp-entity-controls">
         <input
-          placeholder="Search…"
+          placeholder={t("Search…")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
         <select value={domain} onChange={(e) => setDomain(e.target.value)}>
           {domains.map((d) => (
-            <option key={d} value={d}>
-              {d}
+            <option key={d === 'all' ? t('All domains') : d} value={d === 'all' ? t('All domains') : d}>
+              {d === 'all' ? t('All domains') : d}
             </option>
           ))}
         </select>
@@ -108,7 +108,7 @@ export function EntityBrowser() {
             <button
               key={e.entity_id}
               className="fp-entity-row"
-              title={`Add marker for ${e.entity_id}`}
+              title={`${t('Add marker for')} ${e.entity_id}`}
               onClick={() => addMarkerFor(e.entity_id, resolveEntityIcon(e.entity_id, st, e.icon))}
             >
               <span className="fp-entity-dot" data-on={st?.state === 'on' ? 'y' : 'n'} />
@@ -120,12 +120,12 @@ export function EntityBrowser() {
             </button>
           );
         })}
-        {filtered.length === 0 && <div className="fp-empty">No matches</div>}
+        {filtered.length === 0 && <div className="fp-empty">{t("No matches")}</div>}
       </div>
 
       <div className="fp-manual">
         <input
-          placeholder="type entity_id…"
+          placeholder={t("type entity_id…")}
           value={manual}
           onChange={(e) => setManual(e.target.value)}
           onKeyDown={(e) => {
@@ -142,12 +142,10 @@ export function EntityBrowser() {
             setManual('');
           }}
         >
-          Add
-        </button>
+          {t("Add")}</button>
       </div>
       <div className="fp-hint">
-        Click an entity to drop a marker (or add it to the selected marker).
-      </div>
+        {t("Click an entity to drop a marker (or add it to the selected marker).")}</div>
     </div>
   );
 }

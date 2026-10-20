@@ -10,6 +10,7 @@ export default defineConfig({
   server: { port: 5178, strictPort: true },
   build: {
     target: 'es2020',
+    emptyOutDir: false,
     assetsInlineLimit: 0,
     // The full MDI icon set is large but must be bundled (offline, no CDN).
     // Split it into its own chunk so it caches independently of app code.

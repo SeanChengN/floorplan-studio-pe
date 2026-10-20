@@ -1,0 +1,12 @@
+import { useEffect, useState } from 'react';
+import { t } from '../i18n';
+import { Config, dump, parse } from './model';
+
+export function Conditions({ value, disabled, apply }: { value: Config[]; disabled: boolean; apply: (v: Config[]) => void }) {
+  const [draft,setDraft]=useState(dump(value)),[error,setError]=useState('');
+  useEffect(()=>{setDraft(dump(value));setError('');},[value]);
+  return <details className="pe-structured" open><summary>{t('Conditions YAML')}</summary><textarea aria-label={t('Conditions YAML')} value={draft} disabled={disabled} rows={6} onChange={e=>setDraft(e.target.value)}/><button disabled={disabled} onClick={()=>{try{const v=parse(draft);if(!Array.isArray(v)||v.some(c=>!c||typeof c!=='object'||Array.isArray(c)))throw new Error(t('invalidConditions'));apply(v);setError('');}catch(e){setError(`${t('Parse error')}: ${(e as Error).message}`);}}}>{t('Apply conditions')}</button>{error&&<p role="alert" className="pe-error">{error}</p>}</details>;
+}
+export function Actions({ value, disabled, apply }: { value: Config; disabled: boolean; apply: (key: string, action: Config) => void }) {
+  return <details className="pe-structured"><summary>{t('Actions')}</summary>{[['tap_action','Tap'],['hold_action','Hold'],['double_tap_action','Double tap']].map(([key,label])=><label className="pe-field" key={key}><span>{t(label)}</span><select value={value[key]?.action || ''} disabled={disabled} onChange={e=>apply(key,{...(value[key]||{}),action:e.target.value})}><option value="" disabled>{t('Preserve default')}</option>{[['none','None'],['toggle','Toggle'],['more-info','More info'],['navigate','Navigate'],['url','URL'],['perform-action','Call service'],['call-service','Legacy service']].map(([v,name])=><option key={v} value={v}>{t(name)}</option>)}{value[key]?.action&&!['none','toggle','more-info','navigate','url','perform-action','call-service'].includes(value[key].action)&&<option value={value[key].action}>{value[key].action}</option>}</select>{value[key]?.action==='navigate'&&<input aria-label={t('Path')} value={value[key].navigation_path||''} onChange={e=>apply(key,{...value[key],navigation_path:e.target.value})} disabled={disabled}/>} {value[key]?.action==='url'&&<input aria-label={t('URL')} value={value[key].url_path||''} onChange={e=>apply(key,{...value[key],url_path:e.target.value})} disabled={disabled}/>}</label>)}<p className="pe-note">{t('Edit service data and advanced actions in Raw YAML.')}</p></details>;
+}

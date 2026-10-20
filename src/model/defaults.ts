@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { nanoid } from 'nanoid';
 import {
   Action,
@@ -49,7 +50,7 @@ export function emptyBackground(): Background {
   };
 }
 
-export function createFloor(name = 'Ground floor'): Floor {
+export function createFloor(name = t('Ground floor')): Floor {
   return {
     id: nanoid(8),
     name,
@@ -82,7 +83,7 @@ export function createMarker(x: number, y: number, entityId = ''): Marker {
   };
 }
 
-export function createRoom(polygon: Room['polygon'], name = 'Room'): Room {
+export function createRoom(polygon: Room['polygon'], name = t('Room')): Room {
   return {
     id: nanoid(8),
     name,
@@ -100,7 +101,7 @@ export function createWall(points: Wall['points']): Wall {
   return { id: nanoid(8), points, thickness: 6, color: '#334155' };
 }
 
-export function createProject(name = 'Untitled floorplan'): Project {
+export function createProject(name = t('Untitled floorplan')): Project {
   const floor = createFloor();
   const now = Date.now();
   return {

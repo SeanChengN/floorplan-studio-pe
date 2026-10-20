@@ -1,12 +1,13 @@
 name: HACS Validate
 
-# Runs the same validation HACS uses to gate default-store inclusion.
-# Must be green before opening the hacs/default PR.
+# Run after publishing assets, or on demand; no daily idle runs.
 on:
-  push:
-  pull_request:
-  schedule:
-    - cron: "0 0 * * *"
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
 
 jobs:
   hacs:
@@ -17,3 +18,5 @@ jobs:
       - uses: hacs/action@main
         with:
           category: plugin
+          ignore: brands
+          comment: false

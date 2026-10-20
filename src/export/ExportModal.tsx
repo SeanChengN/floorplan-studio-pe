@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect, useMemo, useState } from 'react';
 import { activeFloor, useStore } from '../state/store';
 import { Modal } from '../ui/Modal';
@@ -108,64 +109,64 @@ export function ExportModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="Export to Home Assistant" onClose={onClose} wide>
+    <Modal title={t("Export to Home Assistant")} onClose={onClose} wide>
       <div className="fp-export-grid">
         <div className="fp-export-controls">
-          <div className="fp-subtitle">Target</div>
+          <div className="fp-subtitle">{t("Target")}</div>
           <label className="fp-radio">
             <input type="radio" checked={target === 'ha-floorplan'} onChange={() => setTarget('ha-floorplan')} />
-            <span><strong>ha-floorplan</strong> (HACS card) — SVG + card YAML, supports polygon rooms & rich rules.</span>
+            <span><strong>ha-floorplan</strong> {t("(HACS card) — SVG + card YAML, supports polygon rooms & rich rules.")}</span>
           </label>
           <label className="fp-radio">
             <input type="radio" checked={target === 'picture-elements'} onChange={() => setTarget('picture-elements')} />
-            <span><strong>Picture Elements</strong> (native, no deps) — icons/labels by %. {pe.roomsSkipped > 0 && <em>Rooms not supported.</em>}</span>
+            <span><strong>Picture Elements</strong> {t("(native, no deps) — icons/labels by %.")}{pe.roomsSkipped > 0 && <em>{t("Rooms not supported.")}</em>}</span>
           </label>
           <label className="fp-radio">
             <input type="radio" checked={target === 'svg'} onChange={() => setTarget('svg')} />
-            <span><strong>Raw SVG</strong> — the floorplan SVG only.</span>
+            <span><strong>{t("Raw SVG")}</strong> {t("— the floorplan SVG only.")}</span>
           </label>
 
           {target === 'ha-floorplan' && (
             <>
               <div className="fp-divider" />
-              <div className="fp-subtitle">SVG delivery</div>
+              <div className="fp-subtitle">{t("SVG delivery")}</div>
               <label className="fp-radio">
                 <input type="radio" checked={delivery === 'inline'} onChange={() => setDelivery('inline')} />
-                <span><strong>Inline in card</strong> (data URI) — <em>no files to copy</em>, paste &amp; go. Default.</span>
+                <span><strong>{t("Inline in card")}</strong> {t("(data URI) —")}<em>{t("no files to copy")}</em>{t(", paste &amp; go. Default.")}</span>
               </label>
               <label className="fp-radio">
                 <input type="radio" checked={delivery === 'file'} onChange={() => setDelivery('file')} />
-                <span><strong>Separate .svg file</strong> — card points at <code>/local/floorplan/{baseName}.svg</code> (copy it into www).</span>
+                <span><strong>{t("Separate .svg file")}</strong> {t("— card points at")}<code>/local/floorplan/{baseName}.svg</code> {t("(copy it into www).")}</span>
               </label>
               {delivery === 'file' && <DeployBanner status={deployStatus} url={deployUrl} />}
             </>
           )}
 
           <div className="fp-divider" />
-          <div className="fp-subtitle">Background image</div>
+          <div className="fp-subtitle">{t("Background image")}</div>
           {inline ? (
-            <div className="fp-note">Inline delivery embeds the background inside the SVG automatically — nothing to configure.</div>
+            <div className="fp-note">{t("Inline delivery embeds the background inside the SVG automatically — nothing to configure.")}</div>
           ) : (
             <>
               <label className="fp-radio">
                 <input type="radio" checked={imageMode === 'embed'} onChange={() => setImageMode('embed')} />
-                <span><strong>Embed</strong> (data URI) — self-contained, zero-friction. Default.</span>
+                <span><strong>{t("Embed")}</strong> {t("(data URI) — self-contained, zero-friction. Default.")}</span>
               </label>
               <label className="fp-radio">
                 <input type="radio" checked={imageMode === 'reference'} onChange={() => setImageMode('reference')} />
-                <span><strong>Reference</strong> — emits <code>/local/floorplan/{baseName}.png</code> + the image file.</span>
+                <span><strong>{t("Reference")}</strong> {t("— emits")}<code>/local/floorplan/{baseName}.png</code> {t("+ the image file.")}</span>
               </label>
             </>
           )}
           <div className="fp-divider" />
-          <div className="fp-subtitle">What to do</div>
+          <div className="fp-subtitle">{t("What to do")}</div>
           <Steps target={target} imageMode={imageMode} baseName={baseName} inline={inline} />
 
           <div className="fp-divider" />
           <div className="fp-modal-actions">
-            <button className="fp-primary" onClick={copy}>{copied ? 'Copied!' : 'Copy YAML/SVG'}</button>
-            <button onClick={downloadFiles}>Download files</button>
-            {target === 'ha-floorplan' && <button onClick={downloadPng}>Download PNG</button>}
+            <button className="fp-primary" onClick={copy}>{copied ? t("Copied!") : t("Copy YAML/SVG")}</button>
+            <button onClick={downloadFiles}>{t("Download files")}</button>
+            {target === 'ha-floorplan' && <button onClick={downloadPng}>{t("Download PNG")}</button>}
           </div>
         </div>
 
@@ -195,45 +196,42 @@ function Steps({
       <div className="fp-note">
         {imageMode === 'embed' ? (
           <>
-            <strong>Pure copy-paste — no files, no HACS.</strong> Add via your dashboard →
-            <em> Edit → Add card → Manual</em>, paste the YAML, Save. The background is inlined.
-          </>
+            <strong>{t("Pure copy-paste — no files, no HACS.")}</strong> {t("Add via your dashboard →")}<em> {t("Edit → Add card → Manual")}</em>{t(", paste the YAML, Save. The background is inlined.")}</>
         ) : (
           <>
-            Copy <code>{baseName}.png</code> into {dir}, then add the YAML as a Manual card.
-          </>
+            {t("Copy")}<code>{baseName}.png</code> {t("into")}{dir}{t(", then add the YAML as a Manual card.")}</>
         )}
       </div>
     );
   }
   if (target === 'svg') {
-    return <div className="fp-note">Raw floorplan SVG only — use “Download files”.</div>;
+    return <div className="fp-note">{t("Raw floorplan SVG only — use “Download files”.")}</div>;
   }
   // ha-floorplan
   if (inline) {
     return (
       <div className="fp-note">
-        <strong>Needs the ha-floorplan HACS card. No files to copy.</strong>
+        <strong>{t("Needs the ha-floorplan HACS card. No files to copy.")}</strong>
         <ol style={{ margin: '6px 0 0', paddingLeft: 18 }}>
-          <li><strong>Copy YAML</strong> (the whole floorplan is inside it).</li>
-          <li>Dashboard → <em>Edit → Add card → Manual</em> → paste → Save.</li>
+          <li><strong>{t("Copy YAML")}</strong> {t("(the whole floorplan is inside it).")}</li>
+          <li>{t("Dashboard →")}<em>{t("Edit → Add card → Manual")}</em> {t("→ paste → Save.")}</li>
         </ol>
-        <div style={{ marginTop: 4 }}>The SVG rides along as a data URI in <code>config.image</code>.</div>
+        <div style={{ marginTop: 4 }}>{t("The SVG rides along as a data URI in")}<code>config.image</code>.</div>
       </div>
     );
   }
   return (
     <div className="fp-note">
-      <strong>Needs the ha-floorplan HACS card.</strong>
+      <strong>{t("Needs the ha-floorplan HACS card.")}</strong>
       <ol style={{ margin: '6px 0 0', paddingLeft: 18 }}>
         <li>
-          <strong>Download files</strong> and copy <code>{baseName}.svg</code>
-          {imageMode === 'reference' ? <> and <code>{baseName}.png</code></> : null} into {dir}
+          <strong>{t("Download files")}</strong> {t("and copy")}<code>{baseName}.svg</code>
+          {imageMode === 'reference' ? <> {t("and")}<code>{baseName}.png</code></> : null} {t("into")}{dir}
         </li>
-        <li>Dashboard → <em>Edit → Add card → Manual</em> → paste YAML → Save.</li>
+        <li>{t("Dashboard →")}<em>{t("Edit → Add card → Manual")}</em> {t("→ paste YAML → Save.")}</li>
       </ol>
       {imageMode === 'embed' && (
-        <div style={{ marginTop: 4 }}>Embed mode puts the image inside the SVG, so it’s the only file.</div>
+        <div style={{ marginTop: 4 }}>{t("Embed mode puts the image inside the SVG, so it’s the only file.")}</div>
       )}
     </div>
   );
@@ -241,25 +239,23 @@ function Steps({
 
 function DeployBanner({ status, url }: { status: DeployStatus; url: string }) {
   if (status === 'unknown' || status === 'checking') {
-    return <div className="fp-note">Checking live file at <code>{url}</code>…</div>;
+    return <div className="fp-note">{t("Checking live file at")}<code>{url}</code>…</div>;
   }
   if (status === 'missing') {
     return (
       <div className="fp-note err">
-        <strong>⚠ Not found at <code>{url}</code>.</strong> The dashboard card will render blank until you
-        download the files and copy the SVG into <code>/config/www/floorplan/</code>.
+        <strong>{t("⚠ Not found at")}<code>{url}</code>.</strong> {t("The dashboard card will render blank until you download the files and copy the SVG into")}<code>/config/www/floorplan/</code>.
       </div>
     );
   }
   if (status === 'stale') {
     return (
       <div className="fp-note err">
-        <strong>⚠ Live file differs from this export.</strong> Download files again and copy the fresh{' '}
-        <code>{url}</code> over the old one, or the dashboard keeps showing the previous floorplan.
-      </div>
+        <strong>{t("⚠ Live file differs from this export.")}</strong> {t("Download files again and copy the fresh")}{' '}
+        <code>{url}</code> {t("over the old one, or the dashboard keeps showing the previous floorplan.")}</div>
     );
   }
-  return <div className="fp-note ok">✓ Live file at <code>{url}</code> matches this export.</div>;
+  return <div className="fp-note ok">{t("✓ Live file at")}<code>{url}</code> {t("matches this export.")}</div>;
 }
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'floorplan';

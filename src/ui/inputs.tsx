@@ -1,9 +1,10 @@
 import { ReactNode } from 'react';
+import { t } from '../i18n';
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="fp-field">
-      <span className="fp-field-label">{label}</span>
+      <span className="fp-field-label">{t(label)}</span>
       {children}
     </label>
   );
@@ -100,7 +101,7 @@ export function Select<T extends string>({
     <select value={value} onChange={(e) => onChange(e.target.value as T)}>
       {options.map((o) => (
         <option key={o.value} value={o.value}>
-          {o.label}
+          {t(o.label)}
         </option>
       ))}
     </select>

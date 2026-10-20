@@ -1,18 +1,18 @@
 {
-  "name": "floorplan-studio",
+  "name": "floorplan-studio-pe",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0-beta.1",
   "type": "module",
   "description": "Standalone browser-based Floorplan Studio for Home Assistant",
   "author": "Tinker Söder",
   "license": "MIT",
-  "homepage": "https://github.com/tinkersoder/floorplan-studio#readme",
+  "homepage": "https://github.com/SeanChengN/floorplan-studio-pe#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tinkersoder/floorplan-studio.git"
+    "url": "git+https://github.com/SeanChengN/floorplan-studio-pe.git"
   },
   "bugs": {
-    "url": "https://github.com/tinkersoder/floorplan-studio/issues"
+    "url": "https://github.com/SeanChengN/floorplan-studio-pe/issues"
   },
   "keywords": [
     "home-assistant",

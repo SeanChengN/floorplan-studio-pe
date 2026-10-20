@@ -10,12 +10,12 @@ export default defineConfig({
   build: {
     target: 'es2020',
     outDir: 'dist-hacs',
-    emptyOutDir: true,
+    emptyOutDir: false,
     cssCodeSplit: false,
     lib: {
       entry: 'src/hacs-card.tsx',
       formats: ['es'],
-      fileName: () => 'floorplan-studio.js',
+      fileName: () => 'floorplan-studio-pe.js',
     },
     rollupOptions: {
       // One file — inline the MDI dynamic chunk instead of code-splitting.

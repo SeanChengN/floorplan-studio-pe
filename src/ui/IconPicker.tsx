@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useState } from 'react';
 import { CURATED_ICONS, iconPath } from './icons';
 import { mdiExists } from './mdiFull';
@@ -17,7 +18,7 @@ export function IconPicker({ value, onChange }: { value?: string; onChange: (nam
         <IconSwatch name={known ? text : value} ok={known || !text} />
         <input
           value={text}
-          placeholder="mdi name, e.g. flash"
+          placeholder={t("mdi name, e.g. flash")}
           spellCheck={false}
           onChange={(e) => {
             const v = e.target.value.replace(/^mdi:/, '').trim();
@@ -26,7 +27,7 @@ export function IconPicker({ value, onChange }: { value?: string; onChange: (nam
           }}
         />
       </div>
-      {text && !known && <div className="fp-hint">No icon named “{text}”. Try another (HA uses mdi names).</div>}
+      {text && !known && <div className="fp-hint">{t("No icon named “")}{text}{t("”. Try another (HA uses mdi names).")}</div>}
       <div className="fp-icon-quick">
         {CURATED_ICONS.map((n) => (
           <button

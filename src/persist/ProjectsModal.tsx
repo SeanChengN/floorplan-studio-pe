@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Project } from '../model/schema';
 import { useStore } from '../state/store';
@@ -23,7 +24,7 @@ export function ProjectsModal({ onClose }: { onClose: () => void }) {
   }
 
   async function remove(id: string) {
-    if (!confirm('Delete this project? This cannot be undone.')) return;
+    if (!confirm(t("Delete this project? This cannot be undone."))) return;
     await deleteProject(id);
     refresh();
   }
@@ -38,23 +39,22 @@ export function ProjectsModal({ onClose }: { onClose: () => void }) {
     const text = await file.text();
     try {
       const p = JSON.parse(text) as Project;
-      if (!p.floors || !p.id) throw new Error('Not a floorplan project file');
+      if (!p.floors || !p.id) throw new Error(t("Not a floorplan project file"));
       await saveProject(p);
       useStore.getState().loadProject(p);
       onClose();
     } catch (e) {
-      alert('Import failed: ' + (e as Error).message);
+      alert(t("Import failed: ") + (e as Error).message);
     }
   }
 
   return (
-    <Modal title="Projects" onClose={onClose}>
+    <Modal title={t("Projects")} onClose={onClose}>
       <div className="fp-modal-actions">
         <button className="fp-primary" onClick={() => { useStore.getState().newProject(); onClose(); }}>
-          + New project
-        </button>
-        <button onClick={exportJson}>Export current as JSON</button>
-        <button onClick={() => fileRef.current?.click()}>Import JSON…</button>
+          {t("+ New project")}</button>
+        <button onClick={exportJson}>{t("Export current as JSON")}</button>
+        <button onClick={() => fileRef.current?.click()}>{t("Import JSON…")}</button>
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={(e) => importJson(e.target.files?.[0])} />
       </div>
 
@@ -64,17 +64,17 @@ export function ProjectsModal({ onClose }: { onClose: () => void }) {
             <div className="fp-project-meta">
               <strong>{p.name}</strong>
               <span>
-                {p.floors.length} floor{p.floors.length > 1 ? 's' : ''} · {countMarkers(p)} markers ·{' '}
+                {p.floors.length} {t("floor")} · {countMarkers(p)} {t("markers ·")}{' '}
                 {new Date(p.updatedAt).toLocaleString()}
               </span>
             </div>
             <div className="fp-project-buttons">
-              <button onClick={() => open(p)}>Open</button>
-              <button className="fp-danger" onClick={() => remove(p.id)}>Delete</button>
+              <button onClick={() => open(p)}>{t("Open")}</button>
+              <button className="fp-danger" onClick={() => remove(p.id)}>{t("Delete")}</button>
             </div>
           </div>
         ))}
-        {projects.length === 0 && <div className="fp-empty">No saved projects yet.</div>}
+        {projects.length === 0 && <div className="fp-empty">{t("No saved projects yet.")}</div>}
       </div>
     </Modal>
   );

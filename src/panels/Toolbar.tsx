@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { ToolId, useStore } from '../state/store';
 
 const TOOLS: { id: ToolId; label: string; key: string }[] = [
@@ -41,22 +42,22 @@ export function Toolbar({ onOpenExport, onOpenProjects, onOpenConnect, onOpenHel
       </div>
 
       <div className="fp-toolbar-group">
-        {TOOLS.map((t) => (
+        {TOOLS.map((item) => (
           <button
-            key={t.id}
-            className={tool === t.id ? 'fp-tool active' : 'fp-tool'}
-            onClick={() => setTool(t.id)}
+            key={item.id}
+            className={tool === item.id ? 'fp-tool active' : 'fp-tool'}
+            onClick={() => setTool(item.id)}
             disabled={mode === 'preview'}
-            title={t.key ? `${t.label} (${t.key})` : t.label}
+            title={item.key ? `${t(item.label)} (${item.key})` : t(item.label)}
           >
-            {t.label}
+            {t(item.label)}
           </button>
         ))}
       </div>
 
       <div className="fp-toolbar-group">
-        <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">↶</button>
-        <button onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">↷</button>
+        <button onClick={undo} disabled={!canUndo} title={t("Undo (Ctrl+Z)")}>↶</button>
+        <button onClick={redo} disabled={!canRedo} title={t("Redo (Ctrl+Shift+Z)")}>↷</button>
       </div>
 
       <div className="fp-toolbar-group fp-mode">
@@ -64,25 +65,23 @@ export function Toolbar({ onOpenExport, onOpenProjects, onOpenConnect, onOpenHel
           className={mode === 'edit' ? 'active' : ''}
           onClick={() => setMode('edit')}
         >
-          Edit
-        </button>
+          {t("Edit")}</button>
         <button
           className={mode === 'preview' ? 'active' : ''}
           onClick={() => setMode('preview')}
         >
-          Preview
-        </button>
+          {t("Preview")}</button>
       </div>
 
       <div className="fp-toolbar-group fp-spacer" />
 
       <div className="fp-toolbar-group">
-        <button onClick={onOpenConnect} title="Connect to Home Assistant">
-          {conn.status === 'connected' ? '🟢 HA' : usingDemo ? '◻ Demo' : '⚪ HA'}
+        <button onClick={onOpenConnect} title={t("Connect to Home Assistant")}>
+          {conn.status === 'connected' ? '🟢 HA' : usingDemo ? '◻ ' + t('Demo') : '⚪ HA'}
         </button>
-        <button onClick={onOpenProjects}>Projects</button>
-        <button className="fp-primary" onClick={onOpenExport}>Export</button>
-        <button onClick={onOpenHelp} title="Help">?</button>
+        <button onClick={onOpenProjects}>{t("Projects")}</button>
+        <button className="fp-primary" onClick={onOpenExport}>{t("Export")}</button>
+        <button onClick={onOpenHelp} title={t("Help")}>?</button>
       </div>
     </div>
   );

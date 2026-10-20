@@ -1,7 +1,6 @@
 name: Release
 
-# Push a tag like v0.1.0 -> builds the HACS plugin bundle and publishes a
-# GitHub release with floorplan-studio.js attached (the asset HACS installs).
+# Tag releases publish the distinct PE resource consumed by HACS.
 on:
   push:
     tags:
@@ -17,11 +16,26 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
       - run: npm ci
+      - run: npm test -- --maxWorkers=2 --minWorkers=1
+      - run: node scripts/check-i18n.cjs
       - run: npm run build:hacs
+      - name: Package documentation and checksums
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          cp LICENSE README.zh-CN.md README-PE.md VALIDATION.md dist-hacs/
+          cd dist-hacs
+          zip "floorplan-studio-pe-${VERSION}.zip" floorplan-studio-pe.js LICENSE README.zh-CN.md README-PE.md VALIDATION.md
+          sha256sum floorplan-studio-pe.js "floorplan-studio-pe-${VERSION}.zip" > SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
         with:
-          files: dist-hacs/floorplan-studio.js
-          generate_release_notes: true
+          files: |
+            dist-hacs/floorplan-studio-pe.js
+            dist-hacs/floorplan-studio-pe-*.zip
+            dist-hacs/SHA256SUMS.txt
+          fail_on_unmatched_files: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          body_path: RELEASE-NOTES.md
