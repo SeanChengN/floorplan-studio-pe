@@ -10,6 +10,7 @@ Inherits the parent workspace instructions. Preserve MIT copyright and the origi
 - New files: UTF-8 without BOM, LF. Preserve existing source line endings in narrow edits.
 - Delivery checks: type check, `npm test`, `node scripts/check-i18n.cjs`, both builds, browser smoke and native HA acceptance when available.
 - Vite output cleaning is disabled. Move obsolete output into `.recycle-bin/` before rebuilding a clean package.
+- Keep the root `floorplan-studio-pe.js` synchronized with the HACS build on version updates. It allows HACS to register a prerelease-only repository before beta versions are enabled; normal version installs use the Release attachment.
 - See [README.zh-CN.md](README.zh-CN.md) for usage and [VALIDATION.md](VALIDATION.md) for evidence and remaining limitations.
 
 Use native searches and commands for this repository. No CodeGraph index or RTK workflow is configured here. Hindsight uses the parent shared bank; do not create repository-local routing.
