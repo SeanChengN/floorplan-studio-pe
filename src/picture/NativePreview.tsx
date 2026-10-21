@@ -11,6 +11,9 @@ export function NativePreview({ card, hass, onBounds }: { card: Config; hass: Ha
   const mounted = useRef<(HTMLElement & { hass: HassLike; setConfig: (c: Config) => void }) | null>(null);
   const latest = useRef({card, hass, onBounds}); latest.current = {card, hass, onBounds};
   const [failed, setFailed] = useState(false);
+  // HA state updates need hass assignment, not setConfig (which recreates all elements).
+  const signature = JSON.stringify(card);
+  const applied = useRef<string | null>(null);
   useEffect(() => {
     let cancelled = false; setFailed(false);
     let observer: ResizeObserver | undefined, frame = 0;
@@ -25,7 +28,7 @@ export function NativePreview({ card, hass, onBounds }: { card: Config; hass: Ha
         const el = helpers.createCardElement(latest.current.card);
         el.hass = latest.current.hass!; el.style.cssText = 'display:block;width:100%;pointer-events:none';
         el.setAttribute('inert', ''); el.setAttribute('aria-hidden', 'true');
-        host.current.replaceChildren(el); mounted.current = el;
+        host.current.replaceChildren(el); mounted.current = el; applied.current = JSON.stringify(latest.current.card);
         // Read the actual picture coordinate system, excluding an optional card title.
         let attempts = 0;
         const locate = () => {
@@ -43,9 +46,9 @@ export function NativePreview({ card, hass, onBounds }: { card: Config; hass: Ha
         frame = requestAnimationFrame(locate);
       } catch { if (!cancelled) setFailed(true); }
     })();
-    return () => { cancelled = true; observer?.disconnect(); cancelAnimationFrame(frame); mounted.current = null; host.current?.replaceChildren(); };
+    return () => { cancelled = true; observer?.disconnect(); cancelAnimationFrame(frame); mounted.current = null; applied.current = null; host.current?.replaceChildren(); };
   }, [!!hass]);
-  useEffect(() => { if (mounted.current) { try { mounted.current.setConfig(card); setFailed(false); } catch { setFailed(true); } } }, [card]);
+  useEffect(() => { if (mounted.current && applied.current !== signature) { try { mounted.current.setConfig(latest.current.card); applied.current = signature; setFailed(false); } catch { setFailed(true); } } }, [signature]);
   useEffect(() => { if (mounted.current && hass) mounted.current.hass = hass; }, [hass]);
   return <div className="pe-native">
     <div ref={host}/>

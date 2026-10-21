@@ -17,6 +17,7 @@ export interface Workspace {
   format: 'fps-studio-project'; version: 3; id: string; name: string;
   createdAt: number; updatedAt: number; activeFloorId: string;
   floors: FloorDocument[];
+  archivedFloors?: FloorDocument[];
   legacy?: LegacyProject;
   exportWarnings?: string[];
   archived?: boolean;

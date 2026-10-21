@@ -2,7 +2,7 @@
 
 基于 [Floorplan Studio](https://github.com/tinkersoder/floorplan-studio) 的独立 Fork，将现有 `picture-elements` 编辑、房间和墙门窗绘图整合到一个工作区，提供简体中文界面。保留上游 MIT 许可证和作者署名。
 
-版本：`0.3.0-beta.1`，供测试使用。不会自动替换任何生产卡片。已知限制与依赖审计见 [VALIDATION.md](VALIDATION.md)。
+版本：`0.3.0-beta.2`，供测试使用。不会自动替换任何生产卡片。已知限制与依赖审计见 [VALIDATION.md](VALIDATION.md)。
 
 ## 安装到 Home Assistant
 
@@ -10,7 +10,7 @@
 
 1. 打开 HACS → 右上角菜单 → 自定义仓库。
 2. 添加 `https://github.com/SeanChengN/floorplan-studio-pe`，类型选择 **仪表盘 / Dashboard**（旧版 HACS 为前端 / Lovelace）。
-3. 搜索 **Floorplan Studio PE**，安装时启用测试版（Show beta versions），选择 `v0.3.0-beta.1`。
+3. 搜索 **Floorplan Studio PE**，安装时启用测试版（Show beta versions），选择 `v0.3.0-beta.2`。
 4. 安装后刷新浏览器。如果 HACS 没有自动添加资源，在“设置 → 仪表盘 → 资源”添加 JavaScript 模块 `/hacsfiles/floorplan-studio-pe/floorplan-studio-pe.js`。
 5. 在独立页面添加手动卡片，建议使用面板视图：
 
@@ -27,7 +27,7 @@ Fork 的仓库名、资源名与卡片名均独立，可以与上游版本共存
 2. 在 **设置 → 仪表盘 → 资源** 添加 JavaScript 模块：
 
    ```text
-   /local/floorplan-studio-pe/floorplan-studio-pe.js?v=0.3.0-beta.1
+   /local/floorplan-studio-pe/floorplan-studio-pe.js?v=0.3.0-beta.2
    ```
 
 3. 在独立的编辑页面添加手动卡片，建议使用面板视图：
@@ -59,6 +59,8 @@ Fork 的仓库名、资源名与卡片名均独立，可以与上游版本共存
 房间树直接呈现开灯、关灯、鱼缸等状态；点击状态模拟，眼睛临时隐藏。12 个排列图标常驻工具栏。详细操作见 [统一工作区说明](docs/rooms-and-tools.zh-CN.md)。房间及区域属于编辑项目；开启／关闭填充和状态分支生成原生配置。保存项目以保留完整编辑信息。
 
 ## 保存和恢复
+
+顶部选中楼层后点击“删除楼层”，确认后移入回收区。可撤销，或从“项目 → 当前项目已删除的楼层”恢复；至少保留一个楼层。
 
 - 所有起点共用 v3 项目列表、楼层、自动保存和最近 100 步撤销。刷新保留项目，但会重新开始撤销历史。
 - v1/v2 自动迁移前保存 `floorplan-studio-pe-project-v1-before-v3`，旧键不覆盖。旧绘图 IndexedDB 项目迁入同一列表，原数据保留，并备份到 `fps-legacy-before-v3-<id>`。

@@ -1,12 +1,20 @@
-# Validation — 0.3.0-beta.1
+# Validation — 0.3.0-beta.2
 
 Date: 2026-10-21. Covers the unified workspace, project migration, drawing tools, room state tree and persistent arrangement toolbar. Previous evidence remains in [beta.2](docs/validation-v0.2.0-beta.2.md) and [beta.1](docs/validation-v0.2.0-beta.1.md).
+
+## Emergency patch evidence
+
+The user reported continuous flashing and severe lag after importing a card. Previous native acceptance injected the HA object once and missed the continuous-host-update case.
+
+`scripts/native-refresh.mjs` now pushes 40 successive HA state objects into the mounted editor against the latest 47-element card. Before the fix: **40 setConfig calls**. After the fix: **0 setConfig calls**, both native card instances and image roots retained. State updates still flow through hass; only semantically changed configuration rebuilds card content. Measurement observers now survive hass updates.
+
+Floor deletion is recoverable and preserves content in `archivedFloors`. Tests cover last-floor protection, validation, browser confirmation, undo/redo, reload and restore from the project window. User acceptance of this patch is pending.
 
 ## Automated checks
 
 - TypeScript and both production builds passed. HACS bootstrap JS is synchronized with `dist-hacs/floorplan-studio-pe.js`.
-- **85 tests passed in 10 files.** Includes native semantic round trips, coordinate-only linked movement, room classification without new wrappers, independent state combinations, state-image masks, explicit conditional edits, v3 floors and source preservation, wall/opening regeneration and locks, duplicate/delete integrity, malformed input, migration backups, repeated-project import protection, visibility independent of undo/redo, geometry and arrangement regressions.
-- Translation coverage: **466 dictionary keys**. Simplified Chinese, English and Follow HA remain available.
+- **86 tests passed in 10 files.** Includes native semantic round trips, coordinate-only linked movement, room classification without new wrappers, independent state combinations, state-image masks, explicit conditional edits, v3 floors and source preservation, wall/opening regeneration and locks, duplicate/delete integrity, malformed input, migration backups, repeated-project import protection, visibility independent of undo/redo, geometry and arrangement regressions.
+- Translation coverage: **471 dictionary keys**. Simplified Chinese, English and Follow HA remain available.
 - `browser-smoke.mjs`: import, drag, undo/redo, export, invalid input preservation, reload, Chinese/English and 360/390/430px layouts passed.
 - `browser-tools.mjs`: measured alignment, key object, fixed-endpoint distribution, inactive clipping highlight, room-from-clipping unchanged card, static/state fills, polygon draw and vertex editing, cursor wheel zoom and recoverable v1 migration passed.
 - `browser-workspace.mjs`: one library/canvas, 12 visible icons, four room state rows, independent simulation, visibility with unchanged export, alignment undo, wall/door/window draw and linked geometry edits, entity click placement with non-light details action, common history, reload and project switching passed.

@@ -14,12 +14,23 @@ export function newWorkspace(document=blankDocument(),name=t('Untitled project')
 }
 export const activeDocument=(p:Workspace)=>p.floors.find(f=>f.id===p.activeFloorId)!.document;
 export function withDocument(p:Workspace,d:Document):Workspace {const n=clone(p);n.floors.find(f=>f.id===n.activeFloorId)!.document=d;n.updatedAt=Date.now();return n;}
+export function archiveFloor(p:Workspace):Workspace {
+  if(p.floors.length<2)return p;
+  const next=clone(p),index=next.floors.findIndex(f=>f.id===next.activeFloorId);
+  const [floor]=next.floors.splice(index,1);next.archivedFloors=[...next.archivedFloors||[],floor];
+  next.activeFloorId=next.floors[Math.min(index,next.floors.length-1)].id;return next;
+}
+export function restoreFloor(p:Workspace,id:string):Workspace {
+  const floor=p.archivedFloors?.find(f=>f.id===id);if(!floor)return p;
+  const next=clone(p);next.floors.push(clone(floor));next.archivedFloors=next.archivedFloors!.filter(f=>f.id!==id);next.activeFloorId=id;return next;
+}
 export function importWorkspace(text:string):Workspace {
   const p=parse(text);
   if(p?.format==='fps-picture-project'){const d=importProject(text);if(d.drawing)validateDrawing(d.drawing);return newWorkspace(d);}
   if(p?.format==='fps-studio-project'){
     if(p.version!==3||typeof p.id!=='string'||typeof p.name!=='string'||!Array.isArray(p.floors)||!p.floors.length||!p.floors.some((f:any)=>f.id===p.activeFloorId))throw new EditorError('invalidProject');
-    const ids=new Set<string>();for(const f of p.floors){if(typeof f.id!=='string'||ids.has(f.id)||typeof f.name!=='string')throw new EditorError('invalidProject');ids.add(f.id);f.document=importProject(JSON.stringify(f.document));if(f.document.drawing)validateDrawing(f.document.drawing);}
+    if(p.archivedFloors!==undefined&&!Array.isArray(p.archivedFloors))throw new EditorError('invalidProject');
+    const ids=new Set<string>();for(const f of [...p.floors,...p.archivedFloors||[]]){if(typeof f.id!=='string'||ids.has(f.id)||typeof f.name!=='string')throw new EditorError('invalidProject');ids.add(f.id);f.document=importProject(JSON.stringify(f.document));if(f.document.drawing)validateDrawing(f.document.drawing);}
     return p;
   }
   if(p?.schemaVersion===1&&p.id&&Array.isArray(p.floors)&&p.floors.length)return migrateDrawing(p);

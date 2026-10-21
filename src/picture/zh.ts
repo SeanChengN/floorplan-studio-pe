@@ -1,4 +1,5 @@
 export const pictureZh:Record<string,string>={
+  'Delete floor':'删除楼层','Delete floor (recoverable)':'删除楼层（可恢复）','Keep at least one floor':'至少保留一个楼层','Move the current floor to the recycle bin? It can be restored.':'将当前楼层移入回收区？之后可以恢复。','Deleted floors in current project':'当前项目已删除的楼层',
   'Native export blocked by legacy features:':'以下旧绘图功能暂不能准确导出为原生卡片：',
   'Imported card':'导入的卡片','Floorplan workspace':'户型工作区','Blank drawing':'空白绘制','Untitled project':'未命名项目','Import background':'导入底图','Stacking order':'覆盖顺序',
   'Apply this display rule to the selected layers?':'将以下显示规则应用到所选图层？','Existing additional conditions remain. Locked layers must be unlocked.':'已有附加条件继续保留；修改锁定图层前需先解锁。',

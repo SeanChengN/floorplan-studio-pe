@@ -2,13 +2,13 @@
 
 An independent fork of [Floorplan Studio](https://github.com/tinkersoder/floorplan-studio), based on upstream `b21c1a8ff416f4fd609d11a3564cc436d043f9db`. Original MIT license and copyright retained.
 
-Version **0.3.0-beta.1** unifies card editing and drawing: one project library, canvas, selection, property panel, save flow and undo history. Start with a blank drawing, a background image or an existing `picture-elements` card. Includes Simplified Chinese, English and Follow HA language options.
+Version **0.3.0-beta.2** unifies card editing and drawing: one project library, canvas, selection, property panel, save flow and undo history. Start with a blank drawing, a background image or an existing `picture-elements` card. Includes Simplified Chinese, English and Follow HA language options.
 
 ## Install / update
 
-Add `https://github.com/SeanChengN/floorplan-studio-pe` to HACS custom repositories, category **Dashboard**, enable beta versions and install `v0.3.0-beta.1`. Refresh your browser. The JavaScript module resource remains `/hacsfiles/floorplan-studio-pe/floorplan-studio-pe.js`.
+Add `https://github.com/SeanChengN/floorplan-studio-pe` to HACS custom repositories, category **Dashboard**, enable beta versions and install `v0.3.0-beta.2`. Refresh your browser. The JavaScript module resource remains `/hacsfiles/floorplan-studio-pe/floorplan-studio-pe.js`.
 
-Manual installation: copy the release JS into `/config/www/floorplan-studio-pe/` and register `/local/floorplan-studio-pe/floorplan-studio-pe.js?v=0.3.0-beta.1` as a JavaScript module.
+Manual installation: copy the release JS into `/config/www/floorplan-studio-pe/` and register `/local/floorplan-studio-pe/floorplan-studio-pe.js?v=0.3.0-beta.2` as a JavaScript module.
 
 ```yaml
 type: custom:floorplan-studio-pe-card

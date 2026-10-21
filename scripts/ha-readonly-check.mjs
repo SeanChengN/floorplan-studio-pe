@@ -51,6 +51,8 @@ try{
  await page.getByRole('button',{name:'导入',exact:true}).click();
  await page.locator('.pe-stage > .pe-native hui-picture-elements-card').waitFor({timeout:20000});
  await page.waitForFunction(()=>document.querySelector('floorplan-studio-pe-card')?.shadowRoot?.querySelector('hui-picture-elements-card')?.shadowRoot?.querySelector('#root')?.getBoundingClientRect().height>100);
+ await new Promise(r=>setTimeout(r,500));
+ const {nativeRefresh}=await import('./native-refresh.mjs');await nativeRefresh(page);
  const model=require('../.validation/model.cjs');
  let current=await page.evaluate(()=>(()=>{const l=JSON.parse(localStorage.getItem('floorplan-studio-library-v3')),p=l.projects.find(p=>p.id===l.activeId);return p.floors.find(f=>f.id===p.activeFloorId).document;})());
  assert.deepEqual(current.card,cards[0]);

@@ -5,7 +5,7 @@ import { assignState, roomViews, stateSatisfied, visibleDocument } from './state
 import { blankDocument, importWorkspace, newWorkspace, withDocument } from './project';
 import { editDrawing, newWall } from './drawing';
 import { createMarker, createProject, createRoom as oldRoom } from '../model/defaults';
-import { migrateDrawing } from './project';
+import { migrateDrawing, archiveFloor, restoreFloor } from './project';
 import { pointerPoint, nextSegment } from './interaction';
 import { preserveImportedProject, LIBRARY_KEY } from './library';
 
@@ -55,6 +55,13 @@ describe('unified projects and room states',()=>{
   it('blocks silent loss of plain legacy marker styling even without state rules',()=>{
     const p=createProject('Legacy');p.floors[0].markers.push(createMarker(100,100,'light.test'));
     expect(migrateDrawing(p).exportWarnings).toHaveLength(1);
+  });
+  it('archives floors without losing data, validates and restores them after reload',()=>{
+    const p=newWorkspace(fixture(),'Study');const first=clone(p.floors[0]);p.floors.push({id:'second',name:'Second',document:blankDocument()});
+    const archived=archiveFloor(p);expect(archived.floors.map(f=>f.id)).toEqual(['second']);expect(archived.archivedFloors).toEqual([first]);expect(p.floors).toHaveLength(2);
+    const restored=restoreFloor(importWorkspace(JSON.stringify(archived)),first.id);expect(restored.floors[1]).toEqual(first);expect(restored.activeFloorId).toBe(first.id);expect(restored.archivedFloors).toEqual([]);
+    expect(archiveFloor(archived)).toBe(archived);
+    const malformed=clone(archived);malformed.archivedFloors![0].document.card.type='invalid';expect(()=>importWorkspace(JSON.stringify(malformed))).toThrow();
   });
   it('uses the same coordinate conversion for drawing under zoom and title offsets',()=>{
     expect(pointerPoint({x:500,y:350},{left:100,top:150,width:800,height:400},{width:1200,height:600},20)).toEqual({x:600,y:300});

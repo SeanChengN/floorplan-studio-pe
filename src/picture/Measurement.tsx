@@ -42,6 +42,6 @@ export function Measurement({doc,hass,onMeasure}:{doc:Document;hass:HassLike|nul
     if(host.current){resize.observe(host.current);mutation.observe(host.current,{childList:true,subtree:true});}
     const timer=setInterval(schedule,250);schedule();document.fonts?.ready.then(schedule);
     return()=>{stopped=true;cancelAnimationFrame(frame);clearInterval(timer);resize.disconnect();mutation.disconnect();};
-  },[card,hass,all]);
+  },[card,all]);
   return <div className="pe-measure" ref={host} aria-hidden="true"><NativePreview card={card} hass={hass} onBounds={()=>{}}/></div>;
 }
