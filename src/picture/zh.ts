@@ -1,4 +1,5 @@
 export const pictureZh:Record<string,string>={
+  'Target room':'目标房间','Draw a room first':'请先绘制房间','Delete permanently':'永久删除','Move the project to the recycle bin first.':'请先将项目移入回收区。','This project was permanently deleted. Import a project file to create a new copy.':'此项目已永久删除，请导入项目文件创建新副本。','Permanently delete this project from the library? This cannot be undone. Downloaded files and old backups are not affected.':'从项目库永久删除此项目？此操作无法撤销，已下载文件和旧版备份不受影响。',
   'Delete floor':'删除楼层','Delete floor (recoverable)':'删除楼层（可恢复）','Keep at least one floor':'至少保留一个楼层','Move the current floor to the recycle bin? It can be restored.':'将当前楼层移入回收区？之后可以恢复。','Deleted floors in current project':'当前项目已删除的楼层',
   'Native export blocked by legacy features:':'以下旧绘图功能暂不能准确导出为原生卡片：',
   'Imported card':'导入的卡片','Floorplan workspace':'户型工作区','Blank drawing':'空白绘制','Untitled project':'未命名项目','Import background':'导入底图','Stacking order':'覆盖顺序',

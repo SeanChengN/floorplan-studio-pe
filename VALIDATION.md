@@ -1,6 +1,14 @@
-# Validation — 0.3.0-beta.2
+# Validation — 0.3.0-beta.3
 
 Date: 2026-10-21. Covers the unified workspace, project migration, drawing tools, room state tree and persistent arrangement toolbar. Previous evidence remains in [beta.2](docs/validation-v0.2.0-beta.2.md) and [beta.1](docs/validation-v0.2.0-beta.1.md).
+
+## Toolbar and project management patch
+
+- Room assignment is outside the scrolling room tree, with a persistent target-room selector. The redundant sidebar drawing button is replaced; the drawing toolbar retains the room tool.
+- At a 1600px desktop viewport, the complete canvas toolbar including simulation fits within two rows (browser assertion <=90px), with all 12 arrangement icons visible and no horizontal overflow. Screenshot was visually inspected. Narrow viewports wrap without hiding arrangement actions; expanding entity states uses a floating panel.
+- Project purge requires an archived project and explicit confirmation. Unit tests cover preserving other projects and active selection, rejecting deletion outside the recycle area, atomic write failure and preventing deleted migrated projects from being resurrected. Browser checks cover cancel, confirm and reload.
+- Permanent deletion affects the v3 project-library record. Downloaded project files, original IndexedDB data and old recovery backups remain untouched; an ID tombstone prevents automatic re-import. Importing a downloaded file creates a new copy. No actual user project was deleted during testing; tests use isolated synthetic browser storage.
+- All three browser suites and native HA checks were rerun. The prior 40-push regression still reports zero configuration resets. Human acceptance remains pending.
 
 ## Emergency patch evidence
 
@@ -13,8 +21,8 @@ Floor deletion is recoverable and preserves content in `archivedFloors`. Tests c
 ## Automated checks
 
 - TypeScript and both production builds passed. HACS bootstrap JS is synchronized with `dist-hacs/floorplan-studio-pe.js`.
-- **86 tests passed in 10 files.** Includes native semantic round trips, coordinate-only linked movement, room classification without new wrappers, independent state combinations, state-image masks, explicit conditional edits, v3 floors and source preservation, wall/opening regeneration and locks, duplicate/delete integrity, malformed input, migration backups, repeated-project import protection, visibility independent of undo/redo, geometry and arrangement regressions.
-- Translation coverage: **471 dictionary keys**. Simplified Chinese, English and Follow HA remain available.
+- **89 tests passed in 11 files.** Includes native semantic round trips, coordinate-only linked movement, room classification without new wrappers, independent state combinations, state-image masks, explicit conditional edits, v3 floors and source preservation, wall/opening regeneration and locks, duplicate/delete integrity, malformed input, migration backups, repeated-project import protection, visibility independent of undo/redo, geometry and arrangement regressions.
+- Translation coverage: **477 dictionary keys**. Simplified Chinese, English and Follow HA remain available.
 - `browser-smoke.mjs`: import, drag, undo/redo, export, invalid input preservation, reload, Chinese/English and 360/390/430px layouts passed.
 - `browser-tools.mjs`: measured alignment, key object, fixed-endpoint distribution, inactive clipping highlight, room-from-clipping unchanged card, static/state fills, polygon draw and vertex editing, cursor wheel zoom and recoverable v1 migration passed.
 - `browser-workspace.mjs`: one library/canvas, 12 visible icons, four room state rows, independent simulation, visibility with unchanged export, alignment undo, wall/door/window draw and linked geometry edits, entity click placement with non-light details action, common history, reload and project switching passed.

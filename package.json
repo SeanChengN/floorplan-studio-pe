@@ -1,7 +1,7 @@
 {
   "name": "floorplan-studio-pe",
   "private": true,
-  "version": "0.3.0-beta.2",
+  "version": "0.3.0-beta.3",
   "type": "module",
   "description": "Standalone browser-based Floorplan Studio for Home Assistant",
   "author": "Tinker Söder",

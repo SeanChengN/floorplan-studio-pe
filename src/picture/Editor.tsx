@@ -13,7 +13,7 @@ import { Measurements, Point, zoomAt } from './geometry';
 import { SelectionOverlay } from './SelectionOverlay';
 import { RoomCanvas } from './RoomCanvas';
 import { RoomInspector } from './RoomPanel';
-import { createRoom, roomFromLayer, updateRoom } from './rooms';
+import { assignRoom, createRoom, roomFromLayer, updateRoom } from './rooms';
 import { readRegistry, Registry } from './registry';
 import { ProjectControls } from '../workspace/Projects';
 import { blankDocument, importWorkspace, newWorkspace } from '../workspace/project';
@@ -46,6 +46,7 @@ export default function PictureEditor() {
   const [newType, setNewType] = useState('state-icon'), [entity, setEntity] = useState('');
   const [inside, setInside] = useState(false), [background, setBackground] = useState(false);
   const [search, setSearch] = useState('');
+  const [assignmentRoomId,setAssignmentRoomId]=useState('');
   const [sidebar,setSidebar]=useState<'layers'|'rooms'>('rooms'),[roomId,setRoomId]=useState('');
   const [drawingRoom,setDrawingRoom]=useState(false),[editRoom,setEditRoom]=useState(false),[showRanges,setShowRanges]=useState(true),[keyId,setKeyId]=useState('');
   const [measure,setMeasure]=useState<Measurements>({});
@@ -54,7 +55,7 @@ export default function PictureEditor() {
   const [tool,setTool]=useState<Tool>('select'),[stateId,setStateId]=useState('');
   const vectorId=doc?.drawing&&Object.keys(doc.drawing.bindings).find(id=>doc.drawing!.bindings[id]===selected[0]);
   useEffect(()=>{const up=(e:KeyboardEvent)=>{if(e.code==='Space')space.current=false;};window.addEventListener('keyup',up);return()=>window.removeEventListener('keyup',up);},[]);
-  useEffect(()=>{setRoomId('');setStateId('');setTool('select');setDrawingRoom(false);setEditRoom(false);setMeasure({});setOverrides({});setSimulate(false);setPan({x:0,y:0});setZoom(1);state.select([]);},[state.project?.id,state.project?.activeFloorId]);
+  useEffect(()=>{setAssignmentRoomId('');setRoomId('');setStateId('');setTool('select');setDrawingRoom(false);setEditRoom(false);setMeasure({});setOverrides({});setSimulate(false);setPan({x:0,y:0});setZoom(1);state.select([]);},[state.project?.id,state.project?.activeFloorId]);
   const all = useMemo(() => doc ? rows(doc) : [], [doc]);
   const active = all.find(r => r.layer.id === selected[0]);
   const [draft, setDraft] = useState(''), [draftError, setDraftError] = useState('');
@@ -63,6 +64,7 @@ export default function PictureEditor() {
   const [tempDoc, setTempDoc] = useState<Document | null>(null);
   const renderDoc = tempDoc || doc;
   const activeRoom=doc?.rooms.find(r=>r.id===roomId);
+  const assignmentRoom=doc?.rooms.find(r=>r.id===(roomId||assignmentRoomId))||doc?.rooms[0];
   useEffect(()=>{if(roomId&&!doc?.rooms.some(r=>r.id===roomId)){setRoomId('');setEditRoom(false);setDrawingRoom(false);}},[doc,roomId]);
   const previewHass = useMemo(() => simulatedHass(hass, simulate ? overrides : {}), [hass, simulate, overrides]);
   const safeCard = useMemo(() => renderDoc ? previewCard(editing?visibleDocument(renderDoc,previewHass?.states||{}):renderDoc, editing) : null, [renderDoc, editing, previewHass]);
@@ -161,7 +163,7 @@ export default function PictureEditor() {
     if (drag.current?.moved && !cancel) state.set(drag.current.moved);
     drag.current = null; panDrag.current = null; setTempDoc(null);
   }
-  function chooseRoom(id:string){setStateId('');setTool('select');if(sourceDirty&&!confirm(t('Discard unapplied YAML changes?')))return;setSourceDirty(false);setBackground(false);setRoomId(id);setEditRoom(false);setDrawingRoom(false);}
+  function chooseRoom(id:string){setAssignmentRoomId(id);setStateId('');setTool('select');if(sourceDirty&&!confirm(t('Discard unapplied YAML changes?')))return;setSourceDirty(false);setBackground(false);setRoomId(id);setEditRoom(false);setDrawingRoom(false);}
   function finishRoom(points:Point[]){
     if(!doc)return;
     if(sourceDirty&&!confirm(t('Discard unapplied YAML changes?')))return;
@@ -197,7 +199,7 @@ export default function PictureEditor() {
     {!doc ? <div className="pe-empty"><span className="pe-empty-icon">▧</span><h1>{t('Floorplan workspace')}</h1><p>{t('Import your picture-elements card to start editing.')}</p><p>{t('Your original lighting images and conditions stay in the exported card.')}</p><div>{button('Blank drawing',()=>state.load(newWorkspace(undefined,t('Untitled project'))))}{button('Import background',()=>imageInput.current?.click())}{button('Import card', () => showModal('import'))}{button('Load demo', () => state.set(importCard(dump(demoCard))))}</div></div> : <>
       <div className={'pe-workspace' + (!editing ? ' pe-preview-only' : '')}>
         {editing && <aside className="pe-layers"><div className="pe-side-tabs"><button className={sidebar==='layers'?'active':''} onClick={()=>setSidebar('layers')}>{t('Stacking order')} {all.length}</button><button className={sidebar==='rooms'?'active':''} onClick={()=>setSidebar('rooms')}>{t('Rooms')} {doc.rooms.length}</button></div>
-          <div className="pe-room-create"><button onClick={()=>{if(sourceDirty&&!confirm(t('Discard unapplied YAML changes?')))return;setSourceDirty(false);setRoomId('');setSidebar('rooms');setDrawingRoom(true);}}>{t('Draw room')}</button><button disabled={selected.length!==1||!measure[selected[0]]?.polygon||!measure[selected[0]]?.precise} onClick={()=>{if(sourceDirty&&!confirm(t('Discard unapplied YAML changes?')))return;run(()=>{const next=roomFromLayer(doc,selected[0],measure,aspect);state.set(next);setSourceDirty(false);setRoomId(next.rooms[next.rooms.length-1].id);setSidebar('rooms');});}}>{t('Room from clipping')}</button></div>
+          <div className="pe-room-create"><button className="ws-assign-fixed" disabled={!selected.length||!assignmentRoom} onClick={()=>assignmentRoom&&update(d=>assignRoom(d,assignmentRoom.id,selected))}>{t('Assign selected layers')}</button><select aria-label={t('Target room')} value={assignmentRoom?.id||''} disabled={!doc.rooms.length} onChange={e=>{setRoomId('');setAssignmentRoomId(e.target.value);}}>{!doc.rooms.length&&<option value="">{t('Draw a room first')}</option>}{doc.rooms.map(r=><option key={r.id} value={r.id}>{r.name||t('Room')}</option>)}</select><button disabled={selected.length!==1||!measure[selected[0]]?.polygon||!measure[selected[0]]?.precise} onClick={()=>{if(sourceDirty&&!confirm(t('Discard unapplied YAML changes?')))return;run(()=>{const next=roomFromLayer(doc,selected[0],measure,aspect);state.set(next);setSourceDirty(false);setRoomId(next.rooms[next.rooms.length-1].id);setSidebar('rooms');});}}>{t('Room from clipping')}</button></div>
           {sidebar==='rooms'?<RoomTree doc={doc} activeRoom={roomId} activeState={stateId} hass={previewHass} simulating={simulate} onRoom={chooseRoom} onState={chooseState} onSelect={select} selected={selected} update={update} mask={mask} onAssign={assign}/>:<>
           <input aria-label={t('Search layers')} placeholder={t('Search layers')} value={search} onChange={e => setSearch(e.target.value)}/>
           <button className={'pe-background ' + (background ? 'active' : '')} onClick={() => { if (sourceDirty && !confirm(t('Discard unapplied YAML changes?'))) return; setSourceDirty(false); setBackground(true);setRoomId('');setEditRoom(false);setDrawingRoom(false); state.select([]); }}>{doc.backgroundLocked ? '🔒 ' : ''}{t('Background')}</button>
@@ -215,6 +217,7 @@ export default function PictureEditor() {
           </>}
         </aside>}
         <main className="pe-canvas-column">
+          <div className="ws-controls">
           {editing&&<div className="ws-tool-strip" role="toolbar" aria-label={t('Drawing tools')}>
             {(['select','marker','room','wall','door','window'] as Tool[]).map(x=><button key={x} className={tool===x?'active':''} onClick={()=>setDrawingTool(x)}>{t({select:'Select',marker:'Entity',room:'Room',wall:'Wall',door:'Door',window:'Window'}[x])}</button>)}
             <label className="pe-check"><input type="checkbox" checked={drawing.showGrid} onChange={e=>update(d=>({...d,drawing:{...drawing,showGrid:e.target.checked}}))}/>{t('Grid')}</label>
@@ -222,12 +225,14 @@ export default function PictureEditor() {
             <label className="pe-check"><input type="checkbox" checked={drawing.angles} onChange={e=>update(d=>({...d,drawing:{...drawing,angles:e.target.checked}}))}/>{t('Angle snap')}</label>
           </div>}
           <div className="pe-view-tools"><select aria-label={t('Live states')} value={simulate ? 'sim' : 'live'} onChange={e => setSimulate(e.target.value === 'sim')}><option value="live">{t('Live states')}</option><option value="sim">{t('Simulated states')}</option></select>
-            {editing&&<><Arrangement doc={doc} selected={roomId||vectorId?[]:selected} measure={measure} update={update} onKey={setKeyId}/><label className="pe-check"><input type="checkbox" checked={showRanges} onChange={e=>setShowRanges(e.target.checked)}/>{t('Show selected ranges')}</label></>}
+            {editing&&<><label className="pe-check"><input type="checkbox" checked={showRanges} onChange={e=>setShowRanges(e.target.checked)}/>{t('Show selected ranges')}</label></>}
             <span className="pe-spacer"/>{button('−', () => setZoom(z => Math.max(.25,z-.25)))}<span>{Math.round(zoom*100)}%</span>{button('+', () => setZoom(z => Math.min(4,z+.25)))}{button('Fit', () => {setZoom(1);setPan({x:0,y:0});})}
           </div>
+          {editing&&<Arrangement doc={doc} selected={roomId||vectorId?[]:selected} measure={measure} update={update} onKey={setKeyId}/>}
           {simulate && <div className="pe-simulation">{button('All off', () => setOverrides(Object.fromEntries(ids.filter(id => id.startsWith('light.')).map(id => [id,'off']))))}{button('All on', () => setOverrides(Object.fromEntries(ids.filter(id => id.startsWith('light.')).map(id => [id,'on']))))}{button('Return to live', () => {setOverrides({});setSimulate(false);})}<strong>{t('Simulating')}</strong>
-            <details><summary>{t('Entity states')}</summary>{ids.map(id => <label key={id}>{id}<input list="pe-states" value={overrides[id] ?? hass?.states[id]?.state ?? ''} onChange={e => setOverrides({...overrides,[id]:e.target.value})}/></label>)}</details><datalist id="pe-states">{['on','off','unknown','unavailable','cool','heat'].map(s => <option key={s} value={s}/>)}</datalist>
+            <details><summary>{t('Entity states')}</summary><div className="ws-state-popover">{ids.map(id => <label key={id}>{id}<input list="pe-states" value={overrides[id] ?? hass?.states[id]?.state ?? ''} onChange={e => setOverrides({...overrides,[id]:e.target.value})}/></label>)}</div></details><datalist id="pe-states">{['on','off','unknown','unavailable','cool','heat'].map(s => <option key={s} value={s}/>)}</datalist>
           </div>}
+          </div>
           <div className="pe-scroll" ref={scroll} onContextMenu={e => e.preventDefault()}
             onPointerDownCapture={e => { if (e.button === 1 || e.button===0&&space.current) { e.preventDefault();e.stopPropagation(); e.currentTarget.setPointerCapture(e.pointerId); panDrag.current={x:e.clientX,y:e.clientY,px:pan.x,py:pan.y}; } }}
             onPointerMove={e => {
