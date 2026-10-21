@@ -49,11 +49,12 @@ try{
  await page.getByRole('button',{name:'导入卡片',exact:true}).first().click();
  await page.getByRole('textbox',{name:'卡片 YAML / JSON',exact:true}).fill(JSON.stringify(cards[0]));
  await page.getByRole('button',{name:'导入',exact:true}).click();
- await page.locator('floorplan-studio-pe-card hui-picture-elements-card').waitFor({timeout:20000});
+ await page.locator('.pe-stage > .pe-native hui-picture-elements-card').waitFor({timeout:20000});
  await page.waitForFunction(()=>document.querySelector('floorplan-studio-pe-card')?.shadowRoot?.querySelector('hui-picture-elements-card')?.shadowRoot?.querySelector('#root')?.getBoundingClientRect().height>100);
  const model=require('../.validation/model.cjs');
- const current=await page.evaluate(()=>JSON.parse(localStorage.getItem('floorplan-studio-pe-project-v1')));
+ let current=await page.evaluate(()=>JSON.parse(localStorage.getItem('floorplan-studio-pe-project-v1')));
  assert.deepEqual(current.card,cards[0]);
+ if(process.env.HA_TOOLS==='1'){const {nativeTools}=await import('./native-tools.mjs');await nativeTools(page,out,model,cards[0]);current=await page.evaluate(()=>JSON.parse(localStorage.getItem('floorplan-studio-pe-project-v1')));}
  const target=model.rows(current).find(r=>r.element.type==='state-icon'&&model.canMove(r));
  const handle=page.locator('.pe-handle').filter({hasText:'+'});
  const node=page.getByRole('button',{name:target.element.entity,exact:true}).filter({hasText:'+'}).first();

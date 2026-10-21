@@ -2,7 +2,7 @@
 
 基于 [Floorplan Studio](https://github.com/tinkersoder/floorplan-studio) 的独立 Fork，增加现有 `picture-elements` 卡片的可视化编辑和简体中文界面。保留上游 MIT 许可证和作者署名。
 
-版本：`0.2.0-beta.1`，供测试使用。不会自动替换任何生产卡片。已知限制与依赖审计见 [VALIDATION.md](VALIDATION.md)。
+版本：`0.2.0-beta.2`，供测试使用。不会自动替换任何生产卡片。已知限制与依赖审计见 [VALIDATION.md](VALIDATION.md)。
 
 ## 安装到 Home Assistant
 
@@ -10,7 +10,7 @@
 
 1. 打开 HACS → 右上角菜单 → 自定义仓库。
 2. 添加 `https://github.com/SeanChengN/floorplan-studio-pe`，类型选择 **仪表盘 / Dashboard**（旧版 HACS 为前端 / Lovelace）。
-3. 搜索 **Floorplan Studio PE**，安装时启用测试版（Show beta versions），选择 `v0.2.0-beta.1`。
+3. 搜索 **Floorplan Studio PE**，安装时启用测试版（Show beta versions），选择 `v0.2.0-beta.2`。
 4. 安装后刷新浏览器。如果 HACS 没有自动添加资源，在“设置 → 仪表盘 → 资源”添加 JavaScript 模块 `/hacsfiles/floorplan-studio-pe/floorplan-studio-pe.js`。
 5. 在独立页面添加手动卡片，建议使用面板视图：
 
@@ -27,7 +27,7 @@ Fork 的仓库名、资源名与卡片名均独立，可以与上游版本共存
 2. 在 **设置 → 仪表盘 → 资源** 添加 JavaScript 模块：
 
    ```text
-   /local/floorplan-studio-pe/floorplan-studio-pe.js?v=0.2.0-beta.1
+   /local/floorplan-studio-pe/floorplan-studio-pe.js?v=0.2.0-beta.2
    ```
 
 3. 在独立的编辑页面添加手动卡片，建议使用面板视图：
@@ -54,9 +54,14 @@ Fork 的仓库名、资源名与卡片名均独立，可以与上游版本共存
 
 图层名称、锁定、临时隐藏和关联关系属于编辑器信息，不导出到 HA。临时隐藏只影响编辑画布，完整预览和导出始终包含这些图层。图片覆盖顺序决定最终灯光效果，排序前建议下载项目备份。
 
+## 房间、状态图层和排列工具
+
+详细操作见 [房间与排列工具说明](docs/rooms-and-tools.zh-CN.md)。房间及区域属于编辑项目；开启／关闭填充和状态分支生成原生配置。保存项目以保留完整编辑信息。
+
 ## 保存和恢复
 
-- 现有卡片模式将项目保存到当前浏览器的 localStorage，并保留本次会话最近 100 步历史；刷新后保留项目，撤销历史重新开始。
+- 现有卡片模式将 v2 项目保存到当前浏览器的 localStorage，并保留本次会话最近 100 步历史；刷新后保留项目，撤销历史重新开始。
+- v1 项目自动升级，先将原始数据备份到 `floorplan-studio-pe-project-v1-v1-backup`，再写入 v2。旧版编辑器无法打开 v2；回退安装前请先下载新项目，并使用旧备份恢复。备份或保存失败会提示恢复数据下载。
 - “下载项目”包含卡片和编辑信息，可在另一台电脑“打开项目”。导入项目不会自动下载或迁移图片，图片引用保持原值。
 - 原有“绘制户型”模式继续使用上游 IndexedDB 存储，与现有卡片项目分开。
 - 浏览器配额不足或保存失败会提示下载项目；损坏的本地项目可下载原始恢复数据。
@@ -70,7 +75,7 @@ Fork 的仓库名、资源名与卡片名均独立，可以与上游版本共存
 
 拖动支持百分比 `left/top` 与默认居中变换；复杂表达式、旋转、独立缩放或其他定位方式需要通过 YAML 修改。原生预览读取 HA 实际图片区域，避开卡片标题的高度。独立网页只有布局示意，不能代替 HA 的原生渲染验收。
 
-手机主要用于查看最终导出卡片。当前版本不提供多边形顶点拖动、跨条件容器移动或一键写回仪表盘。
+手机主要用于查看最终导出卡片。当前版本支持房间多边形顶点编辑；不提供任意跨条件容器拖放或一键写回仪表盘。
 
 ## 本地开发和检查
 

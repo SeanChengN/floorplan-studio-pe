@@ -12,6 +12,7 @@ import { setHass, HassLike } from './ha/hassBridge';
 // <head> — we put it in the shadow root instead.
 import cssText from './styles.css?inline';
 import editorCss from './picture/editor.css?inline';
+import toolsCss from './picture/tools.css?inline';
 
 const HOST_CSS =
   ':host{display:block;height:var(--floorplan-studio-height,85vh);}' +
@@ -41,7 +42,7 @@ class FloorplanStudioCard extends HTMLElement {
     const shadow = this.shadowRoot || this.attachShadow({ mode: 'open' });
     shadow.replaceChildren();
     const style = document.createElement('style');
-    style.textContent = HOST_CSS + cssText + editorCss;
+    style.textContent = HOST_CSS + cssText + editorCss + toolsCss;
     shadow.appendChild(style);
     const mount = document.createElement('div');
     mount.className = 'fps-root';

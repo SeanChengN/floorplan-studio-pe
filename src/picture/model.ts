@@ -1,10 +1,12 @@
 import yaml from 'js-yaml';
 import { nanoid } from 'nanoid';
+import type { Room } from './room-types';
+import { validPolygon } from './geometry';
 
 // The imported configuration is the source of truth. Metadata never enters it.
 export type Config = Record<string, any>;
 export interface Layer { id: string; name: string; locked: boolean; hidden: boolean; group?: string; children: Layer[] }
-export interface Document { format: 'fps-picture-project'; version: 1; card: Config; layers: Layer[]; backgroundLocked: boolean }
+export interface Document { format: 'fps-picture-project'; version: 2; card: Config; layers: Layer[]; backgroundLocked: boolean; rooms: Room[] }
 export interface Row { layer: Layer; element: Config; siblings: Config[]; metas: Layer[]; index: number; depth: number; ancestors: Layer[]; conditions: Config[] }
 export const clone = <T,>(value: T): T => structuredClone(value);
 export class EditorError extends Error { constructor(public key: string) { super(key); } }
@@ -47,7 +49,7 @@ export function parse(text: string): any {
 export const dump = (value: unknown) => yaml.dump(value, { schema: yaml.JSON_SCHEMA, lineWidth: -1, noRefs: true });
 const children = (e: Config): Config[] => e.type === 'conditional' ? e.elements : [];
 const autoLocked = (e: Config) => e.type === 'image' && (e.style?.width === '100%' || !!e.style?.['clip-path']);
-function layersFor(elements: Config[]): Layer[] {
+export function layersFor(elements: Config[]): Layer[] {
   return elements.map(e => ({ id: nanoid(), name: '', locked: autoLocked(e), hidden: false, children: layersFor(children(e)) }));
 }
 export function rows(doc: Document): Row[] {
@@ -95,7 +97,7 @@ function exclusive(a: Row, b: Row): boolean {
 }
 export function importCard(text: string): Document {
   const card = parse(text); validateCard(card);
-  const doc: Document = { format: 'fps-picture-project', version: 1, card, layers: layersFor(card.elements), backgroundLocked: true };
+  const doc: Document = { format: 'fps-picture-project', version: 2, card, layers: layersFor(card.elements), backgroundLocked: true, rooms: [] };
   const candidates = new Map<string, Row[]>();
   for (const r of rows(doc)) { const key = pairKey(r); if (key) candidates.set(key, [...(candidates.get(key) || []), r]); }
   for (const rs of candidates.values()) {
@@ -107,7 +109,7 @@ export function importCard(text: string): Document {
 }
 export function importProject(text: string): Document {
   const doc = parse(text);
-  if (!object(doc) || doc.format !== 'fps-picture-project' || doc.version !== 1 || typeof doc.backgroundLocked !== 'boolean') throw new EditorError('invalidProject');
+  if (!object(doc) || doc.format !== 'fps-picture-project' || ![1,2].includes(doc.version) || typeof doc.backgroundLocked !== 'boolean') throw new EditorError('invalidProject');
   validateCard(doc.card);
   const ids = new Set<string>();
   function check(es: Config[], ls: any) {
@@ -119,7 +121,30 @@ export function importProject(text: string): Document {
     });
   }
   check(doc.card.elements, doc.layers);
+  if(doc.version===1){doc.version=2;doc.rooms=[];}
+  validateRooms(doc,ids);
   return doc as Document;
+}
+function validateRooms(doc:Config,ids:Set<string>){
+  const used=new Set<string>(),roomIds=new Set<string>(),effectIds=new Set<string>();
+  const refs=(xs:unknown)=>Array.isArray(xs)&&xs.every(x=>typeof x==='string'&&ids.has(x))&&new Set(xs).size===xs.length;
+  const color=(v:unknown)=>typeof v==='string'&&/^#[\da-f]{6}$/i.test(v);
+  const opacity=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=1;
+  if(!Array.isArray(doc.rooms))throw new EditorError('invalidProject');
+  for(const r of doc.rooms){
+    if(!object(r)||typeof r.id!=='string'||roomIds.has(r.id)||typeof r.name!=='string'||(r.areaId!==undefined&&typeof r.areaId!=='string')||!Array.isArray(r.polygon)||r.polygon.length<3||r.polygon.length>500||r.polygon.some((p:any)=>!object(p)||!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.x>100||p.y<0||p.y>100)||!Number.isFinite(r.aspect)||r.aspect<=0||!color(r.fill)||!opacity(r.opacity)||!refs(r.members)||!refs(r.clipLayers)||r.clipLayers.some((id:string)=>!r.members.includes(id))||(r.baseId!==undefined&&!ids.has(r.baseId))||!Array.isArray(r.effects))throw new EditorError('invalidProject');
+    if(!validPolygon(r.polygon))throw new EditorError('invalidProject');
+    roomIds.add(r.id);for(const id of r.members){if(used.has(id))throw new EditorError('invalidProject');used.add(id);}
+    for(const e of r.effects){
+      if(!object(e)||typeof e.id!=='string'||effectIds.has(e.id)||typeof e.name!=='string'||typeof e.entity!=='string'||!Array.isArray(e.onStates)||!Array.isArray(e.offStates)||[...e.onStates,...e.offStates].some(s=>typeof s!=='string'||!s||['unknown','unavailable'].includes(s))||e.onStates.some((s:string)=>e.offStates.includes(s)))throw new EditorError('invalidProject');
+      effectIds.add(e.id);for(const b of [e.on,e.off])if(!object(b)||!color(b.color)||!opacity(b.opacity)||!refs(b.wrappers)||(b.fillId!==undefined&&!ids.has(b.fillId)))throw new EditorError('invalidProject');
+    }
+  }
+}
+export function pruneRooms(d:Document):Document{
+  const ids=new Set(rows(d).map(r=>r.layer.id));
+  for(const r of d.rooms){r.members=r.members.filter(id=>ids.has(id));r.clipLayers=r.clipLayers.filter(id=>r.members.includes(id));if(r.baseId&&!ids.has(r.baseId))delete r.baseId;for(const e of r.effects)for(const b of [e.on,e.off]){b.wrappers=b.wrappers.filter(id=>ids.has(id));if(b.fillId&&!ids.has(b.fillId))delete b.fillId;}}
+  return d;
 }
 export const exportCard = (doc: Document) => dump(doc.card);
 export function selectionWithGroups(doc: Document, ids: string[]): Row[] {
@@ -149,7 +174,7 @@ export function replaceElement(doc: Document, id: string, value: Config): Docume
   const reconcile = (es: Config[], old: Layer[]): Layer[] => es.map((e, i) => ({ ...(old[i] || layersFor([e])[0]), children: reconcile(children(e), old[i]?.children || []) }));
   r.layer.children = reconcile(children(value), r.layer.children);
   r.siblings[r.index] = clone(value);
-  return d;
+  return pruneRooms(d);
 }
 export function setMeta(doc: Document, id: string, patch: Partial<Pick<Layer, 'name' | 'hidden' | 'locked'>>): Document {
   const d = clone(doc); Object.assign(find(d, id).layer, patch); return d;
@@ -166,7 +191,7 @@ export function remove(doc: Document, ids: string[]): Document {
   const d = clone(doc), rs = rows(d).filter(r => ids.includes(r.layer.id));
   if (rs.some(r => locked(r) || subtreeLocked(r.layer))) throw new EditorError('locked');
   rs.filter(r => !r.ancestors.some(a => ids.includes(a.id))).reverse().forEach(r => { r.siblings.splice(r.index, 1); r.metas.splice(r.index, 1); });
-  return d;
+  return pruneRooms(d);
 }
 export function duplicate(doc: Document, ids: string[]): Document {
   const d = clone(doc), rs = rows(d).filter(r => ids.includes(r.layer.id));

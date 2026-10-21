@@ -1,9 +1,11 @@
 import { useSyncExternalStore } from 'react';
 import { getHass, subscribeHass } from './ha/hassBridge';
 import { legacyZh } from './legacy-zh';
+import { pictureZh, pictureErrorsEn } from './picture/zh';
 export type Language = 'auto' | 'zh-Hans' | 'en';
 export const zh: Record<string, string> = {
   ...legacyZh,
+  ...pictureZh,
   'Follow HA': '跟随 HA', 'Existing card': '编辑现有卡片', 'Drawing studio': '绘制户型',
   'Import card': '导入卡片', 'Export card': '导出卡片', 'Open project': '打开项目', 'Save project': '下载项目',
   'Layers': '图层', 'Properties': '属性', 'Undo': '撤销', 'Redo': '重做', 'Duplicate': '复制元素', 'Delete': '删除',
@@ -50,6 +52,7 @@ export const zh: Record<string, string> = {
   'Parse error': '解析失败', 'Operation failed': '操作失败', 'Unknown state': '未知状态',
 };
 const errorsEn: Record<string, string> = {
+  ...pictureErrorsEn,
   invalidCard: 'Expected one picture-elements card.', invalidElements: 'Invalid elements or nesting exceeds 32 levels.',
   missingImage: 'The card needs image, image_entity, camera_image or state_image.',
   invalidConditions: 'A conditional element needs conditions and elements arrays.', recursiveYaml: 'Recursive YAML is not supported.',

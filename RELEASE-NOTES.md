@@ -1,31 +1,30 @@
-# Floorplan Studio PE 0.2.0-beta.1
+# Floorplan Studio PE 0.2.0-beta.2
 
-首个公开测试版：在 HA 内可视化编辑已有的原生 `picture-elements` 卡片，保留灯光图片叠加、条件逻辑及未知配置。
+新增房间管理、状态图层、排列与范围调试工具，保留原生 Picture Elements 渲染。
 
-- 实体拖动、多选、关联移动、坐标和属性编辑。
-- 图层选择、锁定、临时隐藏、同级排序、撤销重做和项目保存。
-- 安全的 HA 原生预览与模拟灯光状态；不会操作设备或自动写回仪表盘。
-- 完整简体中文 / English / 跟随 HA，保留原有绘图模式。
+- 房间命名、HA 区域绑定、裁剪范围复用、多边形绘制与顶点编辑。
+- 每房间多组独立开关填充及图片／实体图层；原位置增加条件包装，保留已有条件与动作。
+- 六种对齐、六种分布；选区、关键对象、画布基准，使用实际渲染边界。
+- 关闭、隐藏及锁定图层的边界／裁剪高亮；鼠标位置滚轮缩放。
+- 项目 v2，v1 数据先备份后迁移。保存项目以保留房间管理信息；卡片导出仍为标准 `picture-elements`。
 
-## HACS 安装
+## HACS 更新
 
-自定义仓库：`https://github.com/SeanChengN/floorplan-studio-pe`
-
-类型：**仪表盘 / Dashboard**。启用测试版并安装 `v0.2.0-beta.1`，刷新浏览器。
+仓库：`https://github.com/SeanChengN/floorplan-studio-pe`，类型 **仪表盘 / Dashboard**。启用测试版，更新到 `v0.2.0-beta.2`，刷新浏览器。资源名和卡片类型保持不变：
 
 ```yaml
 type: custom:floorplan-studio-pe-card
 height: 90vh
 ```
 
-HACS 使用附件 `floorplan-studio-pe.js`。ZIP 包含模块、许可证与使用说明；`SHA256SUMS.txt` 用于核验下载文件。
+更新前建议下载项目备份。旧版本无法打开 v2 项目；`v0.2.0-beta.1` 保留作为回退点。
 
 ## 验证与限制
 
-本地 39 项测试、341 项翻译键检查、双构建、独立浏览器验证以及 HA 原生灯光预览与手机宽度检查通过。用户人工验收仍待完成。
+71 项测试、翻译检查、双构建、独立浏览器和 HA 2026.7.4 原生预览验收通过。新功能仍待用户人工验收。没有写入生产仪表盘或控制设备。
 
-此版本仍有继承的依赖审计问题（9 项：3 moderate、4 high、2 critical，其中包含 js-yaml 解析器，其余主要在开发工具链），并非已完成安全修复的稳定版。测试期间只导入可信配置，不向网络开放开发或测试服务。
+此前记录的依赖审计问题未通过本次升级修复（依赖版本未变）；2026-10-21 官方 npm 审计当前返回 0 项，不能据此认定已完成安全整改。仅导入可信配置。精确裁剪支持简单 `polygon()`，其他形式保留但有测量限制；未知自定义元素和 `card_mod` 不在安全预览执行。
 
-未知自定义元素和 `card_mod` 会保留导出，但不在编辑器安全预览中执行。暂不支持多边形顶点拖动、手机完整编辑或自动写回仪表盘。详情见 [验证记录](VALIDATION.md) 与 [中文说明](README.zh-CN.md)。
+[中文操作说明](https://github.com/SeanChengN/floorplan-studio-pe/blob/main/docs/rooms-and-tools.zh-CN.md) · [验证记录](https://github.com/SeanChengN/floorplan-studio-pe/blob/main/VALIDATION.md)
 
 Based on Floorplan Studio by Tinker Söder, distributed under the MIT license.

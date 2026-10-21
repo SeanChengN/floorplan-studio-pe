@@ -2,6 +2,12 @@ name: Release
 
 # Tag releases publish the distinct PE resource consumed by HACS.
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to build and publish
+        required: true
+        type: string
   push:
     tags:
       - "v*"
@@ -9,11 +15,25 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - name: Verify version tag
+        shell: bash
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]
+          test "$(git describe --tags --exact-match)" = "$RELEASE_TAG"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -22,13 +42,18 @@ jobs:
       - run: npm test -- --maxWorkers=2 --minWorkers=1
       - run: node scripts/check-i18n.cjs
       - run: npm run build:hacs
+      - name: Check HACS bootstrap bundle
+        run: cmp floorplan-studio-pe.js dist-hacs/floorplan-studio-pe.js
       - name: Package documentation and checksums
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${RELEASE_TAG#v}"
+          test "$(node -p 'require("./package.json").version')" = "$VERSION"
           cp LICENSE README.zh-CN.md README-PE.md VALIDATION.md dist-hacs/
+          mkdir -p dist-hacs/docs
+          cp docs/rooms-and-tools.zh-CN.md docs/validation-v0.2.0-beta.1.md dist-hacs/docs/
           cd dist-hacs
-          zip "floorplan-studio-pe-${VERSION}.zip" floorplan-studio-pe.js LICENSE README.zh-CN.md README-PE.md VALIDATION.md
+          zip "floorplan-studio-pe-${VERSION}.zip" floorplan-studio-pe.js LICENSE README.zh-CN.md README-PE.md VALIDATION.md docs/rooms-and-tools.zh-CN.md docs/validation-v0.2.0-beta.1.md
           sha256sum floorplan-studio-pe.js "floorplan-studio-pe-${VERSION}.zip" > SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
         with:
@@ -37,5 +62,12 @@ jobs:
             dist-hacs/floorplan-studio-pe-*.zip
             dist-hacs/SHA256SUMS.txt
           fail_on_unmatched_files: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
           body_path: RELEASE-NOTES.md
+      - name: Validate published HACS repository
+        uses: hacs/action@main
+        with:
+          category: plugin
+          ignore: brands
+          comment: false

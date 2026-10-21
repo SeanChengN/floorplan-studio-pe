@@ -6,7 +6,7 @@
 
 An independent fork of [Floorplan Studio](https://github.com/tinkersoder/floorplan-studio) by Tinker Söder. Edit existing native cards without losing unknown configuration, while retaining the original drawing mode. MIT license and upstream attribution are preserved.
 
-![Picture Elements editor with Simplified Chinese interface](docs/picture-elements-editor.png)
+![Rooms and native Picture Elements editor with Simplified Chinese interface](docs/rooms-editor.png)
 
 使用内置合成示例展示编辑器布局，不包含私人户型、实体或 HA 配置。Synthetic demo showing the editor layout; no private floorplan or Home Assistant configuration is included.
 
@@ -17,7 +17,7 @@ An independent fork of [Floorplan Studio](https://github.com/tinkersoder/floorpl
    **https://github.com/SeanChengN/floorplan-studio-pe**
 
 2. 类型选择 **仪表盘 / Dashboard**（旧版为 Lovelace / Frontend）。
-3. 找到 **Floorplan Studio PE**，启用 **显示测试版 / Show beta versions**，安装 `v0.2.0-beta.1`。
+3. 找到 **Floorplan Studio PE**，启用 **显示测试版 / Show beta versions**，安装 `v0.2.0-beta.2`。
 4. 刷新浏览器，在独立页面添加手动卡片，建议采用面板视图：
 
    ```yaml
@@ -29,6 +29,10 @@ If HACS does not register the JavaScript module automatically, add `/hacsfiles/f
 
 ## 功能 / Features
 
+- 房间命名与 HA 区域绑定，多边形绘制、顶点编辑与裁剪复用。
+- 每房间多组开关配色及图片／实体图层，导出原生条件与 SVG 填充。
+- 六种对齐、六种分布、选区／关键对象／画布基准，按实际尺寸排列。
+- 条件关闭或临时隐藏图层的裁剪高亮，鼠标位置滚轮缩放。
 - 完整导入单张卡片 YAML/JSON；保留未知字段、条件层级、动作与样式。
 - 实体拖动、多选、关联移动、属性编辑、复制和删除。
 - 图层命名、锁定、临时隐藏、同级排序，撤销/重做。
@@ -44,4 +48,4 @@ If HACS does not register the JavaScript module automatically, add `/hacsfiles/f
 - [Release notes](RELEASE-NOTES.md)
 - [Original upstream documentation](README-UPSTREAM.md) — upstream installation names differ; use the instructions above for this fork.
 
-**Beta:** Known dependency advisories remain, including the YAML parser and development toolchain. Import trusted configurations only; see the validation record. HACS installation and the import → move entity icon → export workflow have passed user testing; other features still need manual acceptance. No automatic dashboard writes, full mobile editing or polygon-vertex editing in this release.
+**Beta:** Dependency versions are unchanged; the historical audit and current audit-service result are documented in the validation record. Import trusted configurations only. HACS installation and the import → move entity icon → export workflow have passed user testing; other features still need manual acceptance. New room and arrangement features await user acceptance. No automatic dashboard writes or full mobile editing in this release.

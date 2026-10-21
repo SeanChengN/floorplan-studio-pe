@@ -7,6 +7,14 @@ import { entityIds, simulatedHass } from './preview';
 import { Bounds, NativePreview } from './NativePreview';
 import { demoCard } from './demo';
 import { Actions, Conditions } from './StructuredFields';
+import { Arrangement } from './Arrangement';
+import { Measurement } from './Measurement';
+import { Measurements, Point, zoomAt } from './geometry';
+import { SelectionOverlay } from './SelectionOverlay';
+import { RoomCanvas } from './RoomCanvas';
+import { RoomInspector, RoomList } from './RoomPanel';
+import { createRoom, roomFromLayer, updateRoom } from './rooms';
+import { readRegistry, Registry } from './registry';
 
 export function download(name: string, content: string) {
   const url = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }));
@@ -25,6 +33,11 @@ export default function PictureEditor() {
   const [newType, setNewType] = useState('state-icon'), [entity, setEntity] = useState('');
   const [inside, setInside] = useState(false), [background, setBackground] = useState(false);
   const [search, setSearch] = useState('');
+  const [sidebar,setSidebar]=useState<'layers'|'rooms'>('layers'),[roomId,setRoomId]=useState('');
+  const [drawingRoom,setDrawingRoom]=useState(false),[editRoom,setEditRoom]=useState(false),[showRanges,setShowRanges]=useState(true),[keyId,setKeyId]=useState('');
+  const [measure,setMeasure]=useState<Measurements>({});
+  const [registry,setRegistry]=useState<Registry>({areas:{},entities:{},devices:{},failed:false});
+  const roomBusy=useRef(false);
   const all = useMemo(() => doc ? rows(doc) : [], [doc]);
   const active = all.find(r => r.layer.id === selected[0]);
   const [draft, setDraft] = useState(''), [draftError, setDraftError] = useState('');
@@ -32,6 +45,8 @@ export default function PictureEditor() {
   const sourceTarget = useRef('');
   const [tempDoc, setTempDoc] = useState<Document | null>(null);
   const renderDoc = tempDoc || doc;
+  const activeRoom=doc?.rooms.find(r=>r.id===roomId);
+  useEffect(()=>{if(roomId&&!doc?.rooms.some(r=>r.id===roomId)){setRoomId('');setEditRoom(false);setDrawingRoom(false);}},[doc,roomId]);
   const safeCard = useMemo(() => renderDoc ? previewCard(renderDoc, editing) : null, [renderDoc, editing]);
   const previewHass = useMemo(() => simulatedHass(hass, simulate ? overrides : {}), [hass, simulate, overrides]);
   const ids = useMemo(() => doc ? entityIds(doc.card) : [], [doc]);
@@ -44,6 +59,12 @@ export default function PictureEditor() {
   const drag = useRef<{ doc: Document; ids: string[]; x: number; y: number; width: number; height: number; moved: Document | null } | null>(null);
   const panDrag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   useEffect(() => subscribeHass(setHass), []);
+  useEffect(()=>{let alive=true;if(hass)readRegistry(hass).then(r=>{if(alive)setRegistry(r);});return()=>{alive=false;};},[!!hass,hass?.areas,hass?.entities]);
+  useEffect(()=>{if(!scroll.current)return;const el=scroll.current;const wheel=(e:WheelEvent)=>{
+    e.preventDefault();if(drag.current||roomBusy.current||panDrag.current)return;
+    const rect=el.getBoundingClientRect(),delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?rect.height:1);
+    const next=zoomAt(zoom,pan,{x:e.clientX-rect.left-rect.width/2,y:e.clientY-rect.top-rect.height/2},Math.exp(-Math.max(-300,Math.min(300,delta))*.002));setZoom(next.zoom);setPan(next.pan);
+  };el.addEventListener('wheel',wheel,{passive:false});return()=>el.removeEventListener('wheel',wheel);},[zoom,pan,!!doc]);
   useEffect(() => {
     const image = new Image(); let alive = true; setImageError(false);
     image.onload = () => { if (alive && image.naturalHeight) setAspect(image.naturalWidth / image.naturalHeight); };
@@ -67,7 +88,7 @@ export default function PictureEditor() {
   };
   function select(ids: string[]) {
     if (sourceDirty && !confirm(t('Discard unapplied YAML changes?'))) return;
-    setSourceDirty(false); state.select(ids); setBackground(false);
+    setSourceDirty(false); state.select(ids); setBackground(false);setRoomId('');setEditRoom(false);setDrawingRoom(false);
   }
   useEffect(() => {
     const target = background ? 'background' : active?.layer.id || '';
@@ -82,6 +103,7 @@ export default function PictureEditor() {
   function key(e: React.KeyboardEvent) {
     if (!editing || e.nativeEvent.isComposing || (e.target instanceof HTMLElement && (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName) || e.target.isContentEditable))) return;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); history(e.shiftKey); return; }
+    if(drawingRoom||roomId)return;
     if (e.key === 'Delete' && selected.length) { e.preventDefault(); update(d => remove(d, selected)); return; }
     const delta: Record<string, number[]> = { ArrowLeft: [-1,0], ArrowRight: [1,0], ArrowUp: [0,-1], ArrowDown: [0,1] };
     if (delta[e.key] && selected.length) { e.preventDefault(); const step = e.shiftKey ? 1 : 0.1; update(d => move(d, selected, delta[e.key][0]*step, delta[e.key][1]*step)); }
@@ -91,7 +113,7 @@ export default function PictureEditor() {
     run(() => {
       const next = modal === 'project' ? importProject(text) : importCard(text);
       if (sourceDirty && !confirm(t('Discard unapplied YAML changes?'))) return;
-      state.set(next); state.select([]); setSourceDirty(false); setBackground(false); setOverrides({}); setModal(null); setZoom(1); setPan({x:0,y:0});
+      state.set(next); state.select([]); setSourceDirty(false); setBackground(false);setRoomId('');setDrawingRoom(false);setEditRoom(false);setMeasure({}); setOverrides({}); setModal(null); setZoom(1); setPan({x:0,y:0});
     });
   }
   const name = (r: typeof all[number]) => r.layer.name || r.element.entity || t(r.element.type === 'conditional' ? 'Condition' : r.element.type === 'image' ? 'Image' : r.element.type === 'state-label' ? 'Temperature / state' : 'Icon');
@@ -114,6 +136,12 @@ export default function PictureEditor() {
     if (drag.current?.moved && !cancel) state.set(drag.current.moved);
     drag.current = null; panDrag.current = null; setTempDoc(null);
   }
+  function chooseRoom(id:string){if(sourceDirty&&!confirm(t('Discard unapplied YAML changes?')))return;setSourceDirty(false);setBackground(false);setRoomId(id);setEditRoom(false);setDrawingRoom(false);}
+  function finishRoom(points:Point[]){
+    if(!doc)return;
+    if(sourceDirty&&!confirm(t('Discard unapplied YAML changes?')))return;
+    run(()=>{const next=activeRoom?updateRoom(doc,activeRoom.id,{polygon:points}):createRoom(doc,points,aspect);state.set(next);setSourceDirty(false);setRoomId(activeRoom?.id||next.rooms[next.rooms.length-1].id);setDrawingRoom(false);setEditRoom(true);setSidebar('rooms');});
+  }
   return <section className="pe-editor" tabIndex={0} onKeyDown={key}>
     <header className="pe-toolbar">
       {button('Import card', () => showModal('import'))}{button('Open project', () => showModal('project'))}
@@ -129,9 +157,11 @@ export default function PictureEditor() {
     {state.storageError && <div className="pe-error">{t('Local save failed. Download your project to keep a backup.')}{state.recovery && button('Download recovery data', () => download('recovery.txt', state.recovery!))}</div>}
     {!doc ? <div className="pe-empty"><span className="pe-empty-icon">▧</span><h1>{t('Existing card')}</h1><p>{t('Import your picture-elements card to start editing.')}</p><p>{t('Your original lighting images and conditions stay in the exported card.')}</p><div>{button('Import card', () => showModal('import'))}{button('Load demo', () => state.set(importCard(dump(demoCard))))}</div></div> : <>
       <div className={'pe-workspace' + (!editing ? ' pe-preview-only' : '')}>
-        {editing && <aside className="pe-layers"><h2>{t('Layers')} <small>{all.length}</small></h2>
+        {editing && <aside className="pe-layers"><div className="pe-side-tabs"><button className={sidebar==='layers'?'active':''} onClick={()=>setSidebar('layers')}>{t('Layers')} {all.length}</button><button className={sidebar==='rooms'?'active':''} onClick={()=>setSidebar('rooms')}>{t('Rooms')} {doc.rooms.length}</button></div>
+          <div className="pe-room-create"><button onClick={()=>{if(sourceDirty&&!confirm(t('Discard unapplied YAML changes?')))return;setSourceDirty(false);setRoomId('');setSidebar('rooms');setDrawingRoom(true);}}>{t('Draw room')}</button><button disabled={selected.length!==1||!measure[selected[0]]?.polygon||!measure[selected[0]]?.precise} onClick={()=>{if(sourceDirty&&!confirm(t('Discard unapplied YAML changes?')))return;run(()=>{const next=roomFromLayer(doc,selected[0],measure,aspect);state.set(next);setSourceDirty(false);setRoomId(next.rooms[next.rooms.length-1].id);setSidebar('rooms');});}}>{t('Room from clipping')}</button></div>
+          {sidebar==='rooms'?<RoomList doc={doc} active={roomId} onRoom={chooseRoom} onLayer={id=>select([id])} selected={selected} update={update}/>:<>
           <input aria-label={t('Search layers')} placeholder={t('Search layers')} value={search} onChange={e => setSearch(e.target.value)}/>
-          <button className={'pe-background ' + (background ? 'active' : '')} onClick={() => { if (sourceDirty && !confirm(t('Discard unapplied YAML changes?'))) return; setSourceDirty(false); setBackground(true); state.select([]); }}>{doc.backgroundLocked ? '🔒 ' : ''}{t('Background')}</button>
+          <button className={'pe-background ' + (background ? 'active' : '')} onClick={() => { if (sourceDirty && !confirm(t('Discard unapplied YAML changes?'))) return; setSourceDirty(false); setBackground(true);setRoomId('');setEditRoom(false);setDrawingRoom(false); state.select([]); }}>{doc.backgroundLocked ? '🔒 ' : ''}{t('Background')}</button>
           <div className="pe-layer-list">
           {all.filter(r => !search || `${name(r)} ${r.element.type}`.toLowerCase().includes(search.toLowerCase())).map(r => <div key={r.layer.id} className={'pe-layer-row ' + (selected.includes(r.layer.id) ? 'selected ' : '') + (hidden(r) ? 'muted' : '')} style={{ paddingLeft: 8 + r.depth*14 }}>
             <button className="pe-layer-name" onClick={e => select(e.shiftKey ? selected.includes(r.layer.id) ? selected.filter(id => id !== r.layer.id) : [...selected, r.layer.id] : [r.layer.id])} title={r.element.type}>{r.element.type === 'conditional' ? '▾ ' : r.element.type === 'image' ? '▧ ' : '◉ '}{name(r)}{r.layer.group ? ' ↔' : ''}</button>
@@ -143,9 +173,11 @@ export default function PictureEditor() {
           {button('Duplicate', () => update(d => duplicate(d, selected)), !selected.length)}{button('Delete', () => update(d => remove(d, selected)), !selected.length)}
           {button('Link movement', () => update(d => link(d, selected)), selected.length < 2)}{button('Unlink movement', () => update(d => link(d, selected, true)), !selected.length)}</div>
           <p className="pe-note">{t('Reordering changes image overlap. Conditional groups move together.')}</p>
+          </>}
         </aside>}
         <main className="pe-canvas-column">
           <div className="pe-view-tools"><select aria-label={t('Live states')} value={simulate ? 'sim' : 'live'} onChange={e => setSimulate(e.target.value === 'sim')}><option value="live">{t('Live states')}</option><option value="sim">{t('Simulated states')}</option></select>
+            {editing&&<><Arrangement doc={doc} selected={roomId?[]:selected} measure={measure} update={update} onKey={setKeyId}/><label className="pe-check"><input type="checkbox" checked={showRanges} onChange={e=>setShowRanges(e.target.checked)}/>{t('Show selected ranges')}</label></>}
             <span className="pe-spacer"/>{button('−', () => setZoom(z => Math.max(.25,z-.25)))}<span>{Math.round(zoom*100)}%</span>{button('+', () => setZoom(z => Math.min(4,z+.25)))}{button('Fit', () => {setZoom(1);setPan({x:0,y:0});})}
           </div>
           {simulate && <div className="pe-simulation">{button('All off', () => setOverrides(Object.fromEntries(ids.filter(id => id.startsWith('light.')).map(id => [id,'off']))))}{button('All on', () => setOverrides(Object.fromEntries(ids.filter(id => id.startsWith('light.')).map(id => [id,'on']))))}{button('Reset simulation', () => setOverrides({}))}
@@ -159,7 +191,8 @@ export default function PictureEditor() {
             }} onPointerUp={() => endDrag()} onPointerCancel={() => endDrag(true)}>
             <div className="pe-stage" ref={stage} style={{ width: stageWidth, height: stageWidth/aspect, transform: `translate(${pan.x}px,${pan.y}px) scale(${zoom})` }}>
               {safeCard && <NativePreview card={safeCard} hass={previewHass} onBounds={b=>setBounds(old=>JSON.stringify(old)===JSON.stringify(b)?old:b)}/>}<div className="pe-glass" />
-              {editing && (renderDoc ? rows(renderDoc) : []).filter(r => r.element.type !== 'conditional' && !hidden(r)).map(r => {
+              {editing&&renderDoc&&<><Measurement doc={renderDoc} hass={previewHass} onMeasure={setMeasure}/>{showRanges&&<SelectionOverlay doc={renderDoc} selected={selected} measure={measure} bounds={bounds} keyId={keyId} background={background}/>}</>}
+              {editing && !drawingRoom && !editRoom && (renderDoc ? rows(renderDoc) : []).filter(r => r.element.type !== 'conditional' && !hidden(r)).map(r => {
                 const p=position(r.element); if (!p) return null;
                 const isSelected=selected.includes(r.layer.id);
                 if (r.element.type === 'image' && !isSelected) return null;
@@ -168,22 +201,25 @@ export default function PictureEditor() {
                     if(e.button!==0) return; e.preventDefault(); e.stopPropagation();
                     (e.currentTarget.closest('.pe-editor') as HTMLElement)?.focus();
                     if(sourceDirty && !confirm(t('Discard unapplied YAML changes?'))) return;
-                    setSourceDirty(false); setBackground(false);
+                    setSourceDirty(false); setBackground(false);setRoomId('');setEditRoom(false);
                     const ids=e.shiftKey ? selected.includes(r.layer.id)?selected.filter(id=>id!==r.layer.id):[...selected,r.layer.id] : selected.includes(r.layer.id)?selected:[r.layer.id];
                     state.select(ids);
                     if(canMove(r) && doc && stage.current && ids.includes(r.layer.id)) { const rect=stage.current.getBoundingClientRect(); e.currentTarget.setPointerCapture(e.pointerId); drag.current={doc,ids,x:e.clientX,y:e.clientY,width:rect.width*(bounds?.width||1),height:rect.height*(bounds?.height||1),moved:null}; }
                   }}><span>{locked(r)?'◇':'+'}</span></button>;
               })}
+              {editing&&(drawingRoom||editRoom||showRanges&&activeRoom)&&<RoomCanvas key={`${drawingRoom}:${roomId}`} room={activeRoom} bounds={bounds} drawing={drawingRoom} editing={editRoom} onCreate={finishRoom} onChange={polygon=>activeRoom&&update(d=>updateRoom(d,activeRoom.id,{polygon}))} onCancel={()=>{setDrawingRoom(false);setEditRoom(false);}} onBusy={b=>{roomBusy.current=b;}}/>}
             </div>
           </div>
           <footer className="pe-status"><span>{t(hass ? 'Native HA preview' : 'Layout preview only — open in HA to verify rendering.')}</span><span>{editing?t('Drag to move · Shift-click to select more · Middle-drag to pan'):t('Preview never controls devices.')}</span></footer>
           {imageError && <p className="pe-error">{t('Image could not be loaded. Check its URL and permissions.')}</p>}
         </main>
         {editing && <aside className="pe-inspector"><h2>{t('Properties')}</h2>
-          {background ? <>{button(doc.backgroundLocked?'Unlock':'Lock',()=>update(d=>({...d,backgroundLocked:!d.backgroundLocked})))}{field('Image URL',doc.card.image,v=>update(d=>({...d,card:{...d.card,image:v}})),doc.backgroundLocked)}</> : active ? <>
+          {activeRoom?<RoomInspector doc={doc} room={activeRoom} registry={registry} selected={selected} update={update} onDraw={()=>setDrawingRoom(true)} onEdit={()=>setEditRoom(!editRoom)} editing={editRoom} onLayer={id=>select([id])} entityIds={Object.keys(hass?.states||{})}/>:background ? <>{button(doc.backgroundLocked?'Unlock':'Lock',()=>update(d=>({...d,backgroundLocked:!d.backgroundLocked})))}{field('Image URL',doc.card.image,v=>update(d=>({...d,card:{...d.card,image:v}})),doc.backgroundLocked)}</> : active ? <>
             {field('Name',active.layer.name,v=>update(d=>setMeta(d,active.layer.id,{name:v})))}
             <p className="pe-note">{active.element.type}{active.layer.group?' · '+t('Linked'):''}{selected.length>1?' · '+selected.length+' '+t('Selected'):''}</p>
+            {measure[active.layer.id]&&!measure[active.layer.id].precise&&<p className="pe-note">{t('Exact clipping outline is unavailable; arrangement is disabled.')}</p>}
             {locked(active) && <p className="pe-note">{t('Locked layers must be unlocked before changing their contents.')}</p>}
+            {hidden(active)&&<p className="pe-note">{t('Temporarily hidden; selected range is still shown.')}</p>}
             {active.element.type==='conditional' && <Conditions value={active.element.conditions} disabled={locked(active)} apply={conditions=>update(d=>replaceElement(d,active.layer.id,{...active.element,conditions}))}/>}
             {active.element.type!=='conditional' && <>
               {field('Entity',active.element.entity,v=>prop('entity',v),locked(active))}
