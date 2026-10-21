@@ -51,9 +51,9 @@ jobs:
           test "$(node -p 'require("./package.json").version')" = "$VERSION"
           cp LICENSE README.zh-CN.md README-PE.md VALIDATION.md dist-hacs/
           mkdir -p dist-hacs/docs
-          cp docs/rooms-and-tools.zh-CN.md docs/validation-v0.2.0-beta.1.md dist-hacs/docs/
+          cp docs/rooms-and-tools.zh-CN.md docs/validation-v0.2.0-beta.1.md docs/validation-v0.2.0-beta.2.md docs/unified-workspace.png dist-hacs/docs/
           cd dist-hacs
-          zip "floorplan-studio-pe-${VERSION}.zip" floorplan-studio-pe.js LICENSE README.zh-CN.md README-PE.md VALIDATION.md docs/rooms-and-tools.zh-CN.md docs/validation-v0.2.0-beta.1.md
+          zip "floorplan-studio-pe-${VERSION}.zip" floorplan-studio-pe.js LICENSE README.zh-CN.md README-PE.md VALIDATION.md docs/rooms-and-tools.zh-CN.md docs/validation-v0.2.0-beta.1.md docs/validation-v0.2.0-beta.2.md docs/unified-workspace.png
           sha256sum floorplan-studio-pe.js "floorplan-studio-pe-${VERSION}.zip" > SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
         with:

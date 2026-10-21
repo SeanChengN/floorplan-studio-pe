@@ -21,7 +21,7 @@ try{
  await page.getByRole('button',{name:'载入示例',exact:true}).click();
  await page.locator('.pe-handle').first().waitFor();
  await page.screenshot({path:path.join(root,'.validation','desktop.png')});
- const getDoc=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('floorplan-studio-pe-project-v1')));
+ const getDoc=()=>page.evaluate(()=>(()=>{const l=JSON.parse(localStorage.getItem('floorplan-studio-library-v3')),p=l.projects.find(p=>p.id===l.activeId);return p.floors.find(f=>f.id===p.activeFloorId).document;})());
  const original=await getDoc();
  const handle=page.locator('.pe-handle').first(),box=await handle.boundingBox();
  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+50,box.y+box.height/2+25,{steps:5});await page.mouse.up();
@@ -38,12 +38,11 @@ try{
  await page.getByRole('alert').waitFor();await page.getByRole('button',{name:'关闭',exact:true}).click();
  await page.reload();assert.deepEqual((await getDoc()).card,moved.card);
  await page.getByRole('combobox',{name:'Language / 语言'}).selectOption('en');
- await page.getByRole('button',{name:'Drawing studio',exact:true}).click();await page.getByRole('button',{name:'Projects',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Projects',exact:true}).waitFor();
  await page.getByRole('combobox',{name:'Language / 语言'}).selectOption('zh-Hans');
  await page.getByRole('button',{name:'项目',exact:true}).waitFor();
  await page.screenshot({path:path.join(root,'.validation','drawing-zh.png')});
- await page.getByRole('button',{name:'编辑现有卡片',exact:true}).click();
  await page.getByRole('button',{name:'预览',exact:true}).click();
  for(const width of [360,390,430]){await page.setViewportSize({width,height:844});await page.screenshot({path:path.join(root,'.validation',`preview-${width}.png`)});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);}
- assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:true,checks:['Chinese/English switch','drawing mode preserved','drag coordinates','undo/redo','export','invalid import preserves document','reload persistence','360/390/430 layout'],pageErrors:errors},null,2));
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:true,checks:['Chinese/English switch','unified drawing workspace','drag coordinates','undo/redo','export','invalid import preserves document','reload persistence','360/390/430 layout'],pageErrors:errors},null,2));
 }finally{await browser.close();}

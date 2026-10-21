@@ -2,12 +2,13 @@ import yaml from 'js-yaml';
 import { nanoid } from 'nanoid';
 import type { Room } from './room-types';
 import { validPolygon } from './geometry';
+import type { Drawing } from '../workspace/types';
 
 // The imported configuration is the source of truth. Metadata never enters it.
 export type Config = Record<string, any>;
 export interface Layer { id: string; name: string; locked: boolean; hidden: boolean; group?: string; children: Layer[] }
-export interface Document { format: 'fps-picture-project'; version: 2; card: Config; layers: Layer[]; backgroundLocked: boolean; rooms: Room[] }
-export interface Row { layer: Layer; element: Config; siblings: Config[]; metas: Layer[]; index: number; depth: number; ancestors: Layer[]; conditions: Config[] }
+export interface Document { format: 'fps-picture-project'; version: 2; card: Config; layers: Layer[]; backgroundLocked: boolean; rooms: Room[]; drawing?: Drawing }
+export interface Row { layer: Layer; element: Config; siblings: Config[]; metas: Layer[]; index: number; depth: number; ancestors: Layer[]; conditions: Config[]; managedDrawing?:boolean }
 export const clone = <T,>(value: T): T => structuredClone(value);
 export class EditorError extends Error { constructor(public key: string) { super(key); } }
 const object = (v: any): v is Config => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -57,7 +58,7 @@ export function rows(doc: Document): Row[] {
   function visit(es: Config[], ls: Layer[], ancestors: Layer[], conditions: Config[]) {
     es.forEach((element, index) => {
       const layer = ls[index];
-      out.push({ layer, element, siblings: es, metas: ls, index, ancestors, depth: ancestors.length, conditions });
+      out.push({ layer, element, siblings: es, metas: ls, index, ancestors, depth: ancestors.length, conditions, ...(doc.drawing&&Object.values(doc.drawing.bindings).includes(layer.id)?{managedDrawing:true}:{}) });
       visit(children(element), layer.children, [...ancestors, layer], [...conditions, ...(element.type === 'conditional' ? element.conditions : [])]);
     });
   }
@@ -74,7 +75,7 @@ export const position = (e: Config) => {
   return { x: parseFloat(s.left), y: parseFloat(s.top) };
 };
 export function canMove(r: Row): boolean {
-  if (locked(r) || !position(r.element)) return false;
+  if (locked(r) || r.managedDrawing || !position(r.element)) return false;
   const s = r.element.style;
   return !['right', 'bottom', 'rotate', 'scale', 'translate'].some(k => k in s) &&
     (!s.transform || s.transform === 'none' || /^translate\(\s*-50%\s*,\s*-50%\s*\)$/.test(s.transform));
@@ -134,6 +135,7 @@ function validateRooms(doc:Config,ids:Set<string>){
   for(const r of doc.rooms){
     if(!object(r)||typeof r.id!=='string'||roomIds.has(r.id)||typeof r.name!=='string'||(r.areaId!==undefined&&typeof r.areaId!=='string')||!Array.isArray(r.polygon)||r.polygon.length<3||r.polygon.length>500||r.polygon.some((p:any)=>!object(p)||!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.x>100||p.y<0||p.y>100)||!Number.isFinite(r.aspect)||r.aspect<=0||!color(r.fill)||!opacity(r.opacity)||!refs(r.members)||!refs(r.clipLayers)||r.clipLayers.some((id:string)=>!r.members.includes(id))||(r.baseId!==undefined&&!ids.has(r.baseId))||!Array.isArray(r.effects))throw new EditorError('invalidProject');
     if(!validPolygon(r.polygon))throw new EditorError('invalidProject');
+    if((r.hidden!==undefined&&typeof r.hidden!=='boolean')||(r.hiddenStates!==undefined&&(!Array.isArray(r.hiddenStates)||r.hiddenStates.some((x:unknown)=>typeof x!=='string')))||(r.stateNames!==undefined&&(!object(r.stateNames)||Object.values(r.stateNames).some(x=>typeof x!=='string'))))throw new EditorError('invalidProject');
     roomIds.add(r.id);for(const id of r.members){if(used.has(id))throw new EditorError('invalidProject');used.add(id);}
     for(const e of r.effects){
       if(!object(e)||typeof e.id!=='string'||effectIds.has(e.id)||typeof e.name!=='string'||typeof e.entity!=='string'||!Array.isArray(e.onStates)||!Array.isArray(e.offStates)||[...e.onStates,...e.offStates].some(s=>typeof s!=='string'||!s||['unknown','unavailable'].includes(s))||e.onStates.some((s:string)=>e.offStates.includes(s)))throw new EditorError('invalidProject');
@@ -143,6 +145,7 @@ function validateRooms(doc:Config,ids:Set<string>){
 }
 export function pruneRooms(d:Document):Document{
   const ids=new Set(rows(d).map(r=>r.layer.id));
+  if(d.drawing){const drawing=d.drawing;drawing.walls=drawing.walls.filter(w=>ids.has(drawing.bindings[w.id]));drawing.openings=drawing.openings.filter(o=>ids.has(drawing.bindings[o.id])&&drawing.walls.some(w=>w.id===o.wallId));const objects=new Set([...drawing.walls,...drawing.openings].map(x=>x.id));drawing.bindings=Object.fromEntries(Object.entries(drawing.bindings).filter(([id])=>objects.has(id)));}
   for(const r of d.rooms){r.members=r.members.filter(id=>ids.has(id));r.clipLayers=r.clipLayers.filter(id=>r.members.includes(id));if(r.baseId&&!ids.has(r.baseId))delete r.baseId;for(const e of r.effects)for(const b of [e.on,e.off]){b.wrappers=b.wrappers.filter(id=>ids.has(id));if(b.fillId&&!ids.has(b.fillId))delete b.fillId;}}
   return d;
 }
@@ -188,23 +191,30 @@ export function reorder(doc: Document, id: string, delta: -1 | 1): Document {
   return d;
 }
 export function remove(doc: Document, ids: string[]): Document {
+  ids=withOpenings(doc,ids);
   const d = clone(doc), rs = rows(d).filter(r => ids.includes(r.layer.id));
   if (rs.some(r => locked(r) || subtreeLocked(r.layer))) throw new EditorError('locked');
   rs.filter(r => !r.ancestors.some(a => ids.includes(a.id))).reverse().forEach(r => { r.siblings.splice(r.index, 1); r.metas.splice(r.index, 1); });
   return pruneRooms(d);
 }
 export function duplicate(doc: Document, ids: string[]): Document {
+  ids=withOpenings(doc,ids);
   const d = clone(doc), rs = rows(d).filter(r => ids.includes(r.layer.id));
   if (rs.some(r => locked(r) || subtreeLocked(r.layer))) throw new EditorError('locked');
-  const groups = new Map<string, string>();
+  const groups = new Map<string, string>(),copies=new Map<string,string>();
   const copyMeta = (l: Layer): Layer => {
     if (l.group && !groups.has(l.group)) groups.set(l.group, nanoid());
-    return { ...l, id: nanoid(), group: l.group ? groups.get(l.group) : undefined, children: l.children.map(copyMeta) };
+    const id=nanoid();copies.set(l.id,id);return { ...l, id, group: l.group ? groups.get(l.group) : undefined, children: l.children.map(copyMeta) };
   };
   rs.filter(r => !r.ancestors.some(a => ids.includes(a.id))).reverse().forEach(r => {
     r.siblings.splice(r.index + 1, 0, clone(r.element)); r.metas.splice(r.index + 1, 0, copyMeta(r.layer));
   });
+  if(d.drawing){const drawing=d.drawing,objects=new Map<string,string>();for(const w of [...drawing.walls]){const layer=copies.get(drawing.bindings[w.id]);if(layer){const id=nanoid();objects.set(w.id,id);drawing.walls.push({...clone(w),id});drawing.bindings[id]=layer;}}for(const o of [...drawing.openings]){const layer=copies.get(drawing.bindings[o.id]);if(layer){const id=nanoid();drawing.openings.push({...clone(o),id,wallId:objects.get(o.wallId)||o.wallId});drawing.bindings[id]=layer;}}}
   return d;
+}
+function withOpenings(doc:Document,ids:string[]):string[]{
+  const drawing=doc.drawing;if(!drawing)return ids;const all=rows(doc),selected=new Set(all.filter(r=>ids.includes(r.layer.id)||r.ancestors.some(a=>ids.includes(a.id))).map(r=>r.layer.id));
+  return [...new Set([...ids,...drawing.openings.filter(o=>selected.has(drawing.bindings[o.wallId])).map(o=>drawing.bindings[o.id])])];
 }
 export function link(doc: Document, ids: string[], unlink = false): Document {
   const d = clone(doc), rs = rows(d).filter(r => ids.includes(r.layer.id));

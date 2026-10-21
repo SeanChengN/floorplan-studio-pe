@@ -43,7 +43,7 @@ function writeFill(d:Document,id:string|undefined,e:Config,name:string):string{
   if(id){managedFill(d,id,e);return id;}const next=push(d,e,name);find(d,next).layer.locked=false;return next;
 }
 function checkEffect(e:Effect){
-  if(!e.entity||!e.onStates.length||!e.offStates.length||[...e.onStates,...e.offStates].some(s=>!s||['unknown','unavailable'].includes(s))||e.onStates.some(s=>e.offStates.includes(s))||![e.on,e.off].every(b=>color(b.color)&&opacity(b.opacity)))throw new EditorError('invalidEffect');
+  if(!e.entity||!e.onStates.length&&!e.offStates.length||[...e.onStates,...e.offStates].some(s=>!s||['unknown','unavailable'].includes(s))||e.onStates.some(s=>e.offStates.includes(s))||![e.on,e.off].every(b=>color(b.color)&&opacity(b.opacity)))throw new EditorError('invalidEffect');
 }
 const conditions=(e:Effect,side:'on'|'off')=>[{condition:'state',entity:e.entity,state:e[side==='on'?'onStates':'offStates']}];
 function checkWrapper(d:Document,id:string,e:Effect,side:'on'|'off'){

@@ -6,25 +6,25 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url);
 const base=process.env.HA_URL, token=process.env.HA_TOKEN;
-if(!base||!token||!process.env.HA_DASHBOARD||!process.env.HA_VIEW)throw new Error('HA_URL, HA_TOKEN, HA_DASHBOARD and HA_VIEW are required');
+if(!base||!token)throw new Error('HA_URL and HA_TOKEN are required');
 const out=path.join(process.cwd(),'.validation');await fs.mkdir(out,{recursive:true});
 const ws=new WebSocket(base.replace(/^http/,'ws')+'/api/websocket');
-const cards=await new Promise((resolve,reject)=>{
- const timeout=setTimeout(()=>{ws.close();reject(new Error('HA read timed out'));},15000);
- ws.onerror=()=>{clearTimeout(timeout);reject(new Error('HA socket failed'));};
- ws.onmessage=e=>{
-  const m=JSON.parse(e.data);
-  if(m.type==='auth_required')ws.send(JSON.stringify({type:'auth',access_token:token}));
-  if(m.type==='auth_invalid'){clearTimeout(timeout);ws.close();reject(new Error('HA authentication rejected'));}
-  if(m.type==='auth_ok')ws.send(JSON.stringify({id:1,type:'lovelace/config',url_path:process.env.HA_DASHBOARD}));
-  if(m.id===1){clearTimeout(timeout);ws.close();if(!m.success){reject(new Error('HA dashboard read failed'));return;}const found=[];
-   const visit=(v)=>{if(!v||typeof v!=='object')return;if(v.type==='picture-elements')found.push(v);Object.values(v).forEach(visit);};
-   // Restrict to the designated preview view; do not persist unrelated cards.
-   const view=m.result.views?.find(v=>v.path===process.env.HA_VIEW);
-   if(!view){console.log(JSON.stringify({availableViews:m.result.views?.map(v=>({path:v.path,title:v.title}))}));reject(new Error('Preview view not found'));return;}visit(view);resolve(found);
-  }
- };
+let serial=0;const pending=new Map();
+await new Promise((resolve,reject)=>{
+ const timer=setTimeout(()=>{ws.close();reject(new Error('HA read timed out'));},15000);
+ ws.onerror=()=>{clearTimeout(timer);reject(new Error('HA socket failed'));};
+ ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='auth_required')ws.send(JSON.stringify({type:'auth',access_token:token}));if(m.type==='auth_invalid'){clearTimeout(timer);reject(new Error('HA authentication rejected'));}if(m.type==='auth_ok'){clearTimeout(timer);resolve();}if(m.id&&pending.has(m.id)){const {resolve,reject,timer}=pending.get(m.id);pending.delete(m.id);clearTimeout(timer);m.success?resolve(m.result):reject(new Error('HA read failed'));}};
 });
+const read=data=>new Promise((resolve,reject)=>{const id=++serial,timer=setTimeout(()=>{pending.delete(id);reject(new Error('HA read timed out'));},15000);pending.set(id,{resolve,reject,timer});ws.send(JSON.stringify({id,...data}));});
+let cards=[];
+try{
+ const dashboards=process.env.HA_DASHBOARD?[{url_path:process.env.HA_DASHBOARD}]:await read({type:'lovelace/dashboards/list'});
+ for(const dashboard of dashboards){
+  let config;try{config=await read({type:'lovelace/config',url_path:dashboard.url_path});}catch{continue;}
+  for(const view of config.views||[]){if(process.env.HA_VIEW&&view.path!==process.env.HA_VIEW)continue;const found=[];const visit=v=>{if(!v||typeof v!=='object')return;if(v.type==='picture-elements')found.push(v);Object.values(v).forEach(visit);};visit(view);cards.push(...found);}
+ }
+ cards.sort((a,b)=>b.elements.length-a.elements.length);if(!cards.length)throw new Error('No picture-elements card found');cards=[cards[0]];
+}finally{ws.close();}
 await fs.writeFile(path.join(out,'live-cards.json'),JSON.stringify(cards),'utf8');
 console.log(JSON.stringify({liveRead:true,cards:cards.length,topLevelCounts:cards.map(c=>c.elements.length)}));
 if(process.env.HA_BROWSER!=='1')process.exit(0);
@@ -52,21 +52,21 @@ try{
  await page.locator('.pe-stage > .pe-native hui-picture-elements-card').waitFor({timeout:20000});
  await page.waitForFunction(()=>document.querySelector('floorplan-studio-pe-card')?.shadowRoot?.querySelector('hui-picture-elements-card')?.shadowRoot?.querySelector('#root')?.getBoundingClientRect().height>100);
  const model=require('../.validation/model.cjs');
- let current=await page.evaluate(()=>JSON.parse(localStorage.getItem('floorplan-studio-pe-project-v1')));
+ let current=await page.evaluate(()=>(()=>{const l=JSON.parse(localStorage.getItem('floorplan-studio-library-v3')),p=l.projects.find(p=>p.id===l.activeId);return p.floors.find(f=>f.id===p.activeFloorId).document;})());
  assert.deepEqual(current.card,cards[0]);
- if(process.env.HA_TOOLS==='1'){const {nativeTools}=await import('./native-tools.mjs');await nativeTools(page,out,model,cards[0]);current=await page.evaluate(()=>JSON.parse(localStorage.getItem('floorplan-studio-pe-project-v1')));}
+ if(process.env.HA_TOOLS==='1'){const {nativeTools}=await import('./native-tools.mjs');await nativeTools(page,out,model,cards[0]);current=await page.evaluate(()=>(()=>{const l=JSON.parse(localStorage.getItem('floorplan-studio-library-v3')),p=l.projects.find(p=>p.id===l.activeId);return p.floors.find(f=>f.id===p.activeFloorId).document;})());}
  const target=model.rows(current).find(r=>r.element.type==='state-icon'&&model.canMove(r));
  const handle=page.locator('.pe-handle').filter({hasText:'+'});
  const node=page.getByRole('button',{name:target.element.entity,exact:true}).filter({hasText:'+'}).first();
  await node.waitFor();
  const rect=await node.boundingBox();await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);await page.mouse.down();await page.mouse.move(rect.x+rect.width/2+40,rect.y+rect.height/2+20,{steps:6});await page.mouse.up();
- const moved=await page.evaluate(()=>JSON.parse(localStorage.getItem('floorplan-studio-pe-project-v1')));
+ const moved=await page.evaluate(()=>(()=>{const l=JSON.parse(localStorage.getItem('floorplan-studio-library-v3')),p=l.projects.find(p=>p.id===l.activeId);return p.floors.find(f=>f.id===p.activeFloorId).document;})());
  assert.notDeepEqual(moved.card,current.card);
  const movedRow=model.rows(moved).find(r=>r.layer.id===target.layer.id);
  const dx=parseFloat(movedRow.element.style.left)-parseFloat(target.element.style.left),dy=parseFloat(movedRow.element.style.top)-parseFloat(target.element.style.top);
  assert.deepEqual(moved.card,model.move(current,[target.layer.id],dx,dy).card);
  await page.getByRole('button',{name:'撤销',exact:true}).click();
- assert.deepEqual((await page.evaluate(()=>JSON.parse(localStorage.getItem('floorplan-studio-pe-project-v1')))).card,cards[0]);
+ assert.deepEqual((await page.evaluate(()=>(()=>{const l=JSON.parse(localStorage.getItem('floorplan-studio-library-v3')),p=l.projects.find(p=>p.id===l.activeId);return p.floors.find(f=>f.id===p.activeFloorId).document;})())).card,cards[0]);
  console.log(JSON.stringify({nativeDrag:true,coordinateOnly:true,undo:true,handles:await handle.count()}));
  const settle=()=>page.evaluate(async()=>{
    const root=document.querySelector('floorplan-studio-pe-card');

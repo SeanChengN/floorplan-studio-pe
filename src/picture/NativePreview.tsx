@@ -15,7 +15,7 @@ export function NativePreview({ card, hass, onBounds }: { card: Config; hass: Ha
     let cancelled = false; setFailed(false);
     let observer: ResizeObserver | undefined, frame = 0;
     onBounds(null);
-    if (!hass || !host.current) return;
+    if (!hass || !host.current || !(window as any).loadCardHelpers) return;
     const w = window as unknown as { loadCardHelpers?: () => Promise<{ createCardElement: (c: Config) => HTMLElement & { hass: HassLike; setConfig: (c: Config) => void } }> };
     (async () => {
       try {
@@ -50,20 +50,19 @@ export function NativePreview({ card, hass, onBounds }: { card: Config; hass: Ha
   return <div className="pe-native">
     <div ref={host}/>
     {failed && <p className="pe-render-error">{t('Cannot create native preview. Reload HA and check required resources.')}</p>}
-    {!hass && <Fallback card={card} />}
+    {(!hass || !(window as any).loadCardHelpers) && <Fallback card={card} states={hass?.states||{}} />}
   </div>;
 }
 function css(style: Config = {}): CSSProperties {
   return Object.fromEntries(Object.entries(style).map(([k, v]) => [k.startsWith('--') ? k : k.replace(/-([a-z])/g, (_, c) => c.toUpperCase()), v])) as CSSProperties;
 }
-function Fallback({ card }: { card: Config }) {
-  const states: Record<string, { state: string }> = {};
+function Fallback({ card, states }: { card: Config; states:Record<string,{state:string}> }) {
   function elements(es: Config[]): any {
     return es.map((e, i) => {
       if (e.type === 'conditional') return matches(e.conditions, states) ? <div key={i}>{elements(e.elements)}</div> : null;
       const style: CSSProperties = { position: 'absolute', ...css(e.style) };
-      if (e.type === 'image') return <img key={i} src={e.image} style={style} draggable={false} />;
-      if (e.type === 'state-label') return <span key={i} style={style}>—</span>;
+      if (e.type === 'image') return <img key={i} src={e.state_image?.[states[e.entity]?.state]||e.image} style={style} draggable={false} />;
+      if (e.type === 'state-label') return <span key={i} style={style}>{states[e.entity]?.state||'—'}</span>;
       if (['state-icon', 'icon'].includes(e.type)) return <svg key={i} viewBox="0 0 24 24" style={{ width: 24, height: 24, fill: 'currentColor', ...style }}><path d={iconPath((e.icon || 'help-circle-outline').replace('mdi:', ''))} /></svg>;
       return null;
     });

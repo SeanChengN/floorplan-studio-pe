@@ -1,8 +1,8 @@
 # Floorplan Studio PE
 
-基于 [Floorplan Studio](https://github.com/tinkersoder/floorplan-studio) 的独立 Fork，增加现有 `picture-elements` 卡片的可视化编辑和简体中文界面。保留上游 MIT 许可证和作者署名。
+基于 [Floorplan Studio](https://github.com/tinkersoder/floorplan-studio) 的独立 Fork，将现有 `picture-elements` 编辑、房间和墙门窗绘图整合到一个工作区，提供简体中文界面。保留上游 MIT 许可证和作者署名。
 
-版本：`0.2.0-beta.2`，供测试使用。不会自动替换任何生产卡片。已知限制与依赖审计见 [VALIDATION.md](VALIDATION.md)。
+版本：`0.3.0-beta.1`，供测试使用。不会自动替换任何生产卡片。已知限制与依赖审计见 [VALIDATION.md](VALIDATION.md)。
 
 ## 安装到 Home Assistant
 
@@ -10,7 +10,7 @@
 
 1. 打开 HACS → 右上角菜单 → 自定义仓库。
 2. 添加 `https://github.com/SeanChengN/floorplan-studio-pe`，类型选择 **仪表盘 / Dashboard**（旧版 HACS 为前端 / Lovelace）。
-3. 搜索 **Floorplan Studio PE**，安装时启用测试版（Show beta versions），选择 `v0.2.0-beta.2`。
+3. 搜索 **Floorplan Studio PE**，安装时启用测试版（Show beta versions），选择 `v0.3.0-beta.1`。
 4. 安装后刷新浏览器。如果 HACS 没有自动添加资源，在“设置 → 仪表盘 → 资源”添加 JavaScript 模块 `/hacsfiles/floorplan-studio-pe/floorplan-studio-pe.js`。
 5. 在独立页面添加手动卡片，建议使用面板视图：
 
@@ -27,7 +27,7 @@ Fork 的仓库名、资源名与卡片名均独立，可以与上游版本共存
 2. 在 **设置 → 仪表盘 → 资源** 添加 JavaScript 模块：
 
    ```text
-   /local/floorplan-studio-pe/floorplan-studio-pe.js?v=0.2.0-beta.2
+   /local/floorplan-studio-pe/floorplan-studio-pe.js?v=0.3.0-beta.1
    ```
 
 3. 在独立的编辑页面添加手动卡片，建议使用面板视图：
@@ -56,16 +56,16 @@ Fork 的仓库名、资源名与卡片名均独立，可以与上游版本共存
 
 ## 房间、状态图层和排列工具
 
-详细操作见 [房间与排列工具说明](docs/rooms-and-tools.zh-CN.md)。房间及区域属于编辑项目；开启／关闭填充和状态分支生成原生配置。保存项目以保留完整编辑信息。
+房间树直接呈现开灯、关灯、鱼缸等状态；点击状态模拟，眼睛临时隐藏。12 个排列图标常驻工具栏。详细操作见 [统一工作区说明](docs/rooms-and-tools.zh-CN.md)。房间及区域属于编辑项目；开启／关闭填充和状态分支生成原生配置。保存项目以保留完整编辑信息。
 
 ## 保存和恢复
 
-- 现有卡片模式将 v2 项目保存到当前浏览器的 localStorage，并保留本次会话最近 100 步历史；刷新后保留项目，撤销历史重新开始。
-- v1 项目自动升级，先将原始数据备份到 `floorplan-studio-pe-project-v1-v1-backup`，再写入 v2。旧版编辑器无法打开 v2；回退安装前请先下载新项目，并使用旧备份恢复。备份或保存失败会提示恢复数据下载。
-- “下载项目”包含卡片和编辑信息，可在另一台电脑“打开项目”。导入项目不会自动下载或迁移图片，图片引用保持原值。
-- 原有“绘制户型”模式继续使用上游 IndexedDB 存储，与现有卡片项目分开。
-- 浏览器配额不足或保存失败会提示下载项目；损坏的本地项目可下载原始恢复数据。
-- 导入会替换当前编辑项目，可以撤销；应用到 HA 前另存当前目标卡片，避免覆盖之后的人工修改。
+- 所有起点共用 v3 项目列表、楼层、自动保存和最近 100 步撤销。刷新保留项目，但会重新开始撤销历史。
+- v1/v2 自动迁移前保存 `floorplan-studio-pe-project-v1-before-v3`，旧键不覆盖。旧绘图 IndexedDB 项目迁入同一列表，原数据保留，并备份到 `fps-legacy-before-v3-<id>`。
+- “下载项目”保留完整编辑信息；导入同 ID 文件会另存副本。项目删除进入可恢复回收区。
+- v3 无法由 beta.2 打开。更新前下载旧项目；beta.2 安装包和旧浏览器数据保留作为回退点。
+- 图片引用不自动搬迁；本地存储配额或备份失败会提示下载恢复数据。
+- 旧绘图完整原文和原始导出能力保留。无法准确转换的实体外观／动作、高级规则、底图变换等会阻止原生导出并列出原因。“导出原始绘图备份”导出迁移前原文，不包含之后编辑。
 
 ## 兼容范围
 

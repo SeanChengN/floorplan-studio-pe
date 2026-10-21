@@ -17,7 +17,7 @@ An independent fork of [Floorplan Studio](https://github.com/tinkersoder/floorpl
    **https://github.com/SeanChengN/floorplan-studio-pe**
 
 2. 类型选择 **仪表盘 / Dashboard**（旧版为 Lovelace / Frontend）。
-3. 找到 **Floorplan Studio PE**，启用 **显示测试版 / Show beta versions**，安装 `v0.2.0-beta.2`。
+3. 找到 **Floorplan Studio PE**，启用 **显示测试版 / Show beta versions**，安装 `v0.3.0-beta.1`。
 4. 刷新浏览器，在独立页面添加手动卡片，建议采用面板视图：
 
    ```yaml

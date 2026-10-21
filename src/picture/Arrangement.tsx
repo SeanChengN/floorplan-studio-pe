@@ -9,14 +9,17 @@ export function Arrangement({doc,selected,measure,update,onKey}:{doc:Document;se
   useEffect(()=>onKey(key),[key,onKey]);
   function reason(distribute:boolean){try{arrangement(doc,selected,measure,'left',distribute,ref);return '';}catch(e){return t((e as {key:string}).key);}}
   const alignReason=reason(false),distributeReason=reason(true),all=rows(doc);
-  return <details className="pe-arrangement"><summary>{t('Arrange')}</summary><div className="pe-arrangement-body">
+  return <div className="pe-arrangement-inline" role="toolbar" aria-label={t('Arrange')}>
     <label className="pe-field"><span>{t('Align to')}</span><select aria-label={t('Align to')} value={reference.kind} onChange={e=>{const kind=e.target.value as Reference['kind'];setReference(kind==='key'?{kind,id:selected[0]||''}:{kind});onKey(kind==='key'?selected[0]||'':'');}}>
       <option value="selection">{t('Selection bounds')}</option><option value="key">{t('Key object')}</option><option value="canvas">{t('Canvas')}</option>
     </select></label>
     {ref.kind==='key'&&<label className="pe-field"><span>{t('Key object')}</span><select aria-label={t('Key object')} value={key} onChange={e=>{setReference({kind:'key',id:e.target.value});onKey(e.target.value);}}>{selected.map(id=><option key={id} value={id}>{all.find(r=>r.layer.id===id)?.layer.name||all.find(r=>r.layer.id===id)?.element.entity||id}</option>)}</select></label>}
-    <strong>{t('Align')}</strong><div className="pe-arrange-grid">{edges.map(edge=><button key={edge} title={alignReason||t(edgeLabels[edge])} disabled={!!alignReason} onClick={()=>update(d=>arrangement(d,selected,measure,edge,false,ref))}>{t(edgeLabels[edge])}</button>)}</div>
-    {alignReason&&<p className="pe-note">{alignReason}</p>}
-    <strong>{t('Distribute within selection')}</strong><div className="pe-arrange-grid">{edges.map(edge=><button key={edge} title={distributeReason||t(edgeLabels[edge])} disabled={!!distributeReason} onClick={()=>update(d=>arrangement(d,selected,measure,edge,true,ref))}>{t(edgeLabels[edge])}</button>)}</div>
-    {distributeReason&&<p className="pe-note">{distributeReason}</p>}
-  </div></details>;
+    {[false,true].map(distribute=><div className="pe-icon-group" role="group" aria-label={t(distribute?'Distribute within selection':'Align')} key={String(distribute)}>{edges.map(edge=>{const label=t(distribute?'Distribute':'Align')+' · '+t(edgeLabels[edge]),why=distribute?distributeReason:alignReason;return <span key={edge} title={why?label+' — '+why:label}><button className="pe-arrange-icon" aria-label={label} disabled={!!why} onClick={()=>update(d=>arrangement(d,selected,measure,edge,distribute,ref))}><ArrangeIcon edge={edge} distribute={distribute}/></button></span>;})}</div>)}
+  </div>;
+}
+function ArrangeIcon({edge,distribute}:{edge:string;distribute:boolean}){
+  const vertical=['top','centerY','bottom'].includes(edge),center=['centerX','centerY'].includes(edge),end=['right','bottom'].includes(edge);
+  return <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><g transform={vertical?'translate(24 0) rotate(90)':undefined} fill="currentColor">
+    {distribute?<>{[3,11,19].map((x,i)=><g key={x}><rect x={x} y="2" width="1" height="20" opacity=".55"/><rect x={x-(center?[1,3,2][i]:end?[2,6,4][i]:0)} y={5+i*5} width={[3,7,5][i]} height="3"/></g>)}</>:<><rect x={center?11:end?20:3} y="2" width="1" height="20" opacity=".65"/>{[7,13,9].map((w,i)=><rect key={i} x={center?11.5-w/2:end?20-w:4} y={4+i*6} width={w} height="4" rx=".5"/>)}</>}
+  </g></svg>;
 }

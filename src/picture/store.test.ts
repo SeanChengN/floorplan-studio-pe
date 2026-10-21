@@ -5,7 +5,7 @@ const card='type: picture-elements\nimage: /local/demo.png\nelements:\n  - type:
 describe('project history and persistence',()=>{
   beforeEach(()=>{
     vi.stubGlobal('localStorage',{getItem:vi.fn(),setItem:vi.fn()});
-    usePicture.setState({doc:null,past:[],future:[],selected:[],storageError:false});
+    usePicture.setState({project:null,doc:null,past:[],future:[],selected:[],storageError:false});
   });
   it('undoes a complete drag once and preserves metadata in history',()=>{
     const a=importCard(card);usePicture.getState().set(a);const id=rows(a)[0].layer.id;
@@ -15,6 +15,14 @@ describe('project history and persistence',()=>{
     usePicture.getState().undo();expect(usePicture.getState().doc).toEqual(a);
     usePicture.getState().redo();expect(usePicture.getState().doc).toEqual(b);
     usePicture.getState().redo();expect(usePicture.getState().doc).toEqual(c);
+  });
+  it('keeps redo and temporary visibility outside content history',()=>{
+    const a=importCard(card),id=rows(a)[0].layer.id;usePicture.getState().set(a);
+    const b=move(a,[id],5,10);usePicture.getState().set(b);usePicture.getState().undo();
+    usePicture.getState().set(setMeta(usePicture.getState().doc!,id,{hidden:true}),false);
+    expect(usePicture.getState().future).toHaveLength(1);usePicture.getState().redo();
+    expect(usePicture.getState().doc!.card).toEqual(b.card);expect(rows(usePicture.getState().doc!)[0].layer.hidden).toBe(true);
+    usePicture.getState().undo();expect(usePicture.getState().doc!.card).toEqual(a.card);expect(rows(usePicture.getState().doc!)[0].layer.hidden).toBe(true);
   });
   it('does not add a no-op history entry, and keeps document after a quota failure',()=>{
     const d=importCard(card);usePicture.getState().set(d);usePicture.getState().set(d);

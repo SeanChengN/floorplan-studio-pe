@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { t } from '../i18n';
 import { Document, rows } from './model';
-import { Registry, areaFor } from './registry';
+import { Registry } from './registry';
 import { Effect, Room } from './room-types';
 import { addEffect, assignBranch, assignRoom, deleteEffect, deleteRoom, detachBranch, newBranchImage, saveEffect, setRoomClip, updateRoom } from './rooms';
 type Update=(fn:(d:Document)=>Document)=>void;
@@ -18,9 +18,9 @@ function Text({label,value,onChange}:{label:string;value:string;onChange:(v:stri
 function Fill({label,color,opacity,onChange}:{label:string;color:string;opacity:number;onChange:(color:string,opacity:number)=>void}){
   return <fieldset className="pe-fill"><legend>{t(label)}</legend><label>{t('Color')}<input type="color" aria-label={t(label)+' '+t('Color')} value={color} onChange={e=>onChange(e.target.value,opacity)}/></label><label>{t('Opacity')}<input aria-label={t(label)+' '+t('Opacity')} type="number" min="0" max="1" step="0.01" value={opacity} onChange={e=>onChange(color,Number(e.target.value))}/></label></fieldset>;
 }
-export function RoomInspector({doc,room,registry,selected,update,onDraw,onEdit,editing,onLayer,entityIds}:{doc:Document;room:Room;registry:Registry;selected:string[];update:Update;onDraw:()=>void;onEdit:()=>void;editing:boolean;onLayer:(id:string)=>void;entityIds:string[]}){
+export function RoomInspector({doc,room,registry,selected,update,onDraw,onEdit,editing}:{doc:Document;room:Room;registry:Registry;selected:string[];update:Update;onDraw:()=>void;onEdit:()=>void;editing:boolean;onLayer:(id:string)=>void;entityIds:string[]}){
+  const [effectEntity,setEffectEntity]=useState(''),[effectName,setEffectName]=useState('');
   const existing=!!room.areaId&&!!registry.areas[room.areaId],all=rows(doc);
-  const inArea=room.areaId?entityIds.filter(id=>areaFor(registry,id)===room.areaId):entityIds;
   return <div className="pe-room-inspector"><h2>{t('Room')}</h2>
     <Text label="Name" value={room.name} onChange={name=>update(d=>updateRoom(d,room.id,{name}))}/>
     <label className="pe-field"><span>{t('HA area')}</span><select aria-label={t('HA area')} value={room.areaId||''} onChange={e=>update(d=>updateRoom(d,room.id,{areaId:e.target.value||undefined}))}><option value="">{t('No area')}</option>{room.areaId&&!existing&&<option value={room.areaId}>{room.areaId}</option>}{Object.entries(registry.areas).map(([id,a])=><option key={id} value={id}>{a.name||id}</option>)}</select></label>
@@ -32,13 +32,15 @@ export function RoomInspector({doc,room,registry,selected,update,onDraw,onEdit,e
     <button disabled={!selected.length} onClick={()=>update(d=>assignRoom(d,room.id,selected,true))}>{t('Unassign selected layers')}</button>
     {selected.length===1&&all.find(r=>r.layer.id===selected[0])?.element.type==='image'&&room.members.includes(selected[0])&&<label className="pe-check"><input type="checkbox" checked={room.clipLayers.includes(selected[0])} onChange={e=>update(d=>setRoomClip(d,room.id,selected[0],e.target.checked))}/>{t('Use room boundary for clipping')}</label>}
     <p className="pe-note">{t('Area binding filters entities only. Each effect has its own controlling entity.')}</p>
-    {room.effects.map(e=><EffectEditor key={e.id} doc={doc} room={room} effect={e} selected={selected} update={update} onLayer={onLayer} entities={inArea}/>)}
-    <button onClick={()=>update(d=>addEffect(d,room.id))}>{t('Add state effect')}</button>
+    <p className="pe-note">{t("Select a state in the room tree to edit its settings.")}</p>
+    <Text label="Effect name" value={effectName} onChange={setEffectName}/>
+    <label className="pe-field"><span>{t('Controlling entity')}</span><input list="pe-entities" value={effectEntity} onChange={e=>setEffectEntity(e.target.value)}/></label>
+    <button disabled={!effectEntity.trim()} onClick={()=>update(d=>{const n=addEffect(d,room.id),r=n.rooms.find(r=>r.id===room.id)!,e=r.effects[r.effects.length-1];e.entity=effectEntity.trim();e.name=effectName;return saveEffect(n,room.id,e);})}>{t('Add state effect')}</button>
     <div className="pe-room-delete"><button onClick={()=>update(d=>deleteRoom(d,room.id))}>{t('Delete room; keep layers')}</button><button onClick={()=>{if(confirm(t('Delete this room and its layers? This can be undone.')))update(d=>deleteRoom(d,room.id,true));}}>{t('Delete room and layers')}</button></div>
     <p className="pe-note">{t('Save the project to retain rooms and state effect settings. Card YAML contains native rendering only.')}</p>
   </div>;
 }
-function EffectEditor({doc,room,effect,selected,update,onLayer,entities}:{doc:Document;room:Room;effect:Effect;selected:string[];update:Update;onLayer:(id:string)=>void;entities:string[]}){
+export function EffectEditor({doc,room,effect,selected,update,onLayer,entities,sideOnly}:{doc:Document;room:Room;effect:Effect;selected:string[];update:Update;onLayer:(id:string)=>void;entities:string[];sideOnly?:'on'|'off'}){
   const [draft,setDraft]=useState(effect),[urls,setUrls]=useState({on:'',off:''});
   useEffect(()=>setDraft(effect),[effect]);
   const dirty=JSON.stringify(draft)!==JSON.stringify(effect);
@@ -46,7 +48,7 @@ function EffectEditor({doc,room,effect,selected,update,onLayer,entities}:{doc:Do
     <label className="pe-field"><span>{t('Controlling entity')}</span><input list={'pe-area-'+effect.id} value={draft.entity} onChange={e=>setDraft({...draft,entity:e.target.value,onStates:e.target.value.startsWith('light.')?['on']:draft.onStates,offStates:e.target.value.startsWith('light.')?['off']:draft.offStates})}/></label><datalist id={'pe-area-'+effect.id}>{entities.map(id=><option key={id} value={id}/>)}</datalist>
     <Text label="On states (comma separated)" value={draft.onStates.join(', ')} onChange={v=>setDraft({...draft,onStates:v.split(',').map(s=>s.trim())})}/>
     <Text label="Off states (comma separated)" value={draft.offStates.join(', ')} onChange={v=>setDraft({...draft,offStates:v.split(',').map(s=>s.trim())})}/>
-    {(['on','off'] as const).map(side=><div key={side} className="pe-effect-branch">
+    {(['on','off'] as const).filter(side=>!sideOnly||side===sideOnly).map(side=><div key={side} className="pe-effect-branch">
       <Fill label={side==='on'?'On fill':'Off fill'} color={draft[side].color} opacity={draft[side].opacity} onChange={(color,opacity)=>setDraft({...draft,[side]:{...draft[side],color,opacity}})}/>
       <strong>{t(side==='on'?'On layers':'Off layers')}</strong>
       {effect[side].wrappers.map(id=><div key={id} className="pe-branch-row"><button onClick={()=>onLayer(id)}>{rows(doc).find(r=>r.layer.id===id)?.layer.name||t('Condition')}</button><button disabled={dirty} onClick={()=>update(d=>detachBranch(d,room.id,effect.id,side,id))}>{t('Remove from branch')}</button></div>)}

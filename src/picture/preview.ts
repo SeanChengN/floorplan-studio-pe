@@ -2,7 +2,8 @@ import { Config } from './model';
 import { HassLike } from '../ha/hassBridge';
 
 export function simulatedHass(hass: HassLike | null, overrides: Record<string, string>): HassLike | null {
-  if (!hass) return null;
+  if (!hass && !Object.keys(overrides).length) return null;
+  hass = hass || {states:{}};
   const states = { ...hass.states };
   for (const [id, state] of Object.entries(overrides)) {
     states[id] = { ...(states[id] || { entity_id: id, attributes: {} }), state };

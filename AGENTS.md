@@ -1,11 +1,11 @@
 # Floorplan Studio PE
 
 Local fork of `tinkersoder/floorplan-studio`, upstream baseline `b21c1a8ff416f4fd609d11a3564cc436d043f9db`.
-Inherits the parent workspace instructions. Preserve MIT copyright and the original drawing mode.
+Inherits the parent workspace instructions. Preserve MIT copyright and recoverable legacy drawing data/export.
 
 - The imported native card is the source of truth. Do not regenerate it through the drawing-mode exporter.
 - Keep editor IDs, locks, names, visibility and groups outside exported HA configuration.
-- Room/area/effect management metadata lives in v2 projects; v1 browser data must be backed up before migration writes. Classifying rooms never rewrites the native card. Explicit effects wrap nodes in place and preserve existing conditions/actions.
+- Unified project files use v3 with native v2 floor documents; v1/v2 and legacy drawing data must be backed up before migration writes. Classifying rooms never rewrites the native card. Explicit effects wrap nodes in place and preserve existing conditions/actions.
 - Use isolated read-only native measurement for hidden/inactive layers. Registry fallback queries may only read area/entity/device registries; preview and simulation must never call devices or write dashboards.
 - Preview is read-only: no device actions or dashboard writes. Do not commit real HA fixtures, tokens or private endpoint details.
 - Native output must round-trip semantically, including unknown fields. Use synthetic tests; private acceptance fixtures belong only in ignored `.validation/`.
