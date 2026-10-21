@@ -6,6 +6,10 @@
 
 An independent fork of [Floorplan Studio](https://github.com/tinkersoder/floorplan-studio) by Tinker Söder. Edit existing native cards without losing unknown configuration, while retaining the original drawing mode. MIT license and upstream attribution are preserved.
 
+![Picture Elements editor with Simplified Chinese interface](docs/picture-elements-editor.png)
+
+使用内置合成示例展示编辑器布局，不包含私人户型、实体或 HA 配置。Synthetic demo showing the editor layout; no private floorplan or Home Assistant configuration is included.
+
 ## HACS 安装 / Installation
 
 1. 在 HACS 的 **自定义仓库 / Custom repositories** 添加：
@@ -40,4 +44,4 @@ If HACS does not register the JavaScript module automatically, add `/hacsfiles/f
 - [Release notes](RELEASE-NOTES.md)
 - [Original upstream documentation](README-UPSTREAM.md) — upstream installation names differ; use the instructions above for this fork.
 
-**Beta:** Known dependency advisories remain, including the YAML parser and development toolchain. Import trusted configurations only; see the validation record. User manual acceptance is pending. No automatic dashboard writes, full mobile editing or polygon-vertex editing in this release.
+**Beta:** Known dependency advisories remain, including the YAML parser and development toolchain. Import trusted configurations only; see the validation record. HACS installation and the import → move entity icon → export workflow have passed user testing; other features still need manual acceptance. No automatic dashboard writes, full mobile editing or polygon-vertex editing in this release.

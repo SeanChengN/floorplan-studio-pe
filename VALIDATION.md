@@ -45,9 +45,15 @@ Home Assistant **2026.7.4** was then loaded in an independent temporary browser 
 
 Screenshots: `.validation/ha-editor.png`, `ha-all-off.png`, `ha-all-on.png`, `ha-preview-*.png`, `ha-exported-*.png`. These are local evidence, not published artifacts.
 
+## User acceptance — 2026-10-21
+
+The user confirmed successful installation through HACS and successful import of a card, movement of entity icons, and export of the edited configuration. This is manual acceptance of that specific workflow; it does not establish acceptance of every editor feature or replacement of the final production card.
+
+The public README screenshot uses the built-in synthetic demo only. Private acceptance screenshots remain excluded from the repository.
+
 ## Remaining limits
 
-- User manual acceptance and a persistent HA installation remain pending. No production card was replaced.
+- Broader manual acceptance remains pending. HACS installation and the import/move/export workflow are user-confirmed; final production-card replacement has not been confirmed.
 - Preview deliberately omits unknown custom elements and `card_mod` execution. Their configuration survives export. A final card relying on those extensions needs its own visual check.
 - Complex positioning expressions and nonstandard transforms remain editable in YAML but are not draggable. Polygon vertices and mobile full editing are outside this beta.
 - Same-browser editor instances share the existing module state/HA bridge; use one editor card per page.
